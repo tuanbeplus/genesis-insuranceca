@@ -1,0 +1,86 @@
+/*
+Theme Name: Genesis Insuranceca
+Theme URI: https://demo.studiopress.com/
+Description: This is the sample theme created for the Genesis Framework.
+Author: tom@ysnstudios.com
+Author URI: tom@ysnstudios.com
+Version: 2.0
+Tags: accessibility-ready, block-styles, custom-colors, custom-logo, custom-menu, editor-style, featured-images, footer-widgets, full-width-template, left-sidebar, one-column, right-sidebar, rtl-language-support, sticky-post, theme-options, threaded-comments, translation-ready, two-columns, wide-blocks
+Template: genesis
+License: GPL-2.0-or-later
+License URI: https://www.gnu.org/licenses/gpl-2.0.html
+Text Domain: genesis-insuranceca
+Requires at least: 5.4
+Requires PHP: 5.6
+*/
+[tooltip]{
+    position: relative;
+    cursor: pointer;
+    font-weight: 700;
+}
+[tooltip]::before, [tooltip]::after{
+    text-transform: none; /* opinion 2 */
+    font-size: .9em; /* opinion 3 */
+    line-height: 1;
+    user-select: none;
+    pointer-events: none;
+    position: absolute;
+    display: none;
+    opacity: 0;
+}
+[tooltip]:hover::before, [tooltip]:hover::after{
+    -webkit-animation: tooltips-vert 300ms ease-out forwards;
+    animation: tooltips-vert 300ms ease-out forwards;
+}
+[tooltip]::before{
+    content: '';
+    display: inline-block;
+    border: 11px solid transparent;
+    z-index: 1001;
+    bottom: calc(100% + 4px);
+    border-bottom-width: 0;
+    border-top-color: #2a8164;
+    left: 40%;
+}
+@keyframes tooltips-vert {
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+@keyframes tooltips-horz {
+  to {
+    opacity: 1;
+    transform: translate(0, -50%);
+  }
+}
+[tooltip]::after{
+    content: attr(tooltip);
+    display: inline-block;
+    min-width: 351px;
+    overflow: hidden;
+    padding: 13px 16px 16px 20px;
+    border-radius: .3ch;
+    background: #2a8164;
+    font-size: 15px;
+    letter-spacing: -0.44px;
+    font-weight: 400;
+    color: #fff;
+    z-index: 1000;
+    bottom: calc(100% + 15px);
+    left: 80%;
+    transform: translateX(0);
+    line-height: normal;
+    text-align: left;
+    font-family: "Inter", sans-serif;
+    border-radius: 5px;
+}
+ol, ul {
+    padding-left: 30px !important;
+    list-style-type: none;
+}
+ol li, ul li{
+  list-style-type: inherit;
+  margin-bottom: 10px;
+}

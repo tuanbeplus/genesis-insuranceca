@@ -1,0 +1,58 @@
+/*
+* Global
+*/
+@import 'vars';
+@import 'fonts';
+@import 'default';
+@import 'common';
+
+body{
+	font-family: $main-font;
+	font-size: 17px;
+	font-weight: normal;
+	.container,.wrap{
+		max-width: $max-width;
+		margin: 0 auto;
+		padding: 0 10px;
+	}
+	.site-inner{
+		padding: 32px 10px;
+		.entry-header{
+			display: none;
+		}
+		.content{
+			width: 100%;
+		}
+	}
+	.footer-widgets .wrap{
+		max-width: $max-width;
+	}
+	&.elementor-template-full-width{
+		.site-inner{
+			max-width: 100%;
+			padding: 46px 0 0 0;
+			overflow: hidden;
+			@media only screen and (max-width: 767px){
+				padding: 30px 0;
+			}
+		}
+	}
+	h1,h2,h3,h4,h5,h6 {
+		font-family: $main-font;
+	}
+	.site-inner ul li{
+		  list-style-type: initial !important;
+	}
+}
+
+/*
+* Import
+*/
+@import 'header';
+@import 'mega-menu';
+@import 'footer';
+@import 'home';
+@import 'search';
+@import 'custom-main';
+@import 'alert-banner-top';
+@import 'insurers';
