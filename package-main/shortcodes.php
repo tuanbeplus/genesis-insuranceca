@@ -26,6 +26,27 @@ function ica_render_insurers_global_search($atts) {
 				placeholder="<?php echo $placeholder ?>" 
 				autocomplete="off" spellcheck="false" dir="auto">
 			<button class="btn-search-insurer" type="submit" title="Search"><i class="fa fa-search"></i></button>
+			<?php
+			// Fetch parent categories for initial dropdown
+			$parent_cats = get_terms([
+				'taxonomy' => 'insurer-category',
+				'hide_empty' => false,
+				'parent' => 0,
+				'number' => 12,
+			]);
+			?>
+			<ul class="insurer-suggestion-dropdown" style="display:none;">
+				<?php if (!empty($parent_cats) && !is_wp_error($parent_cats)): ?>
+					<?php foreach ($parent_cats as $cat): ?>
+						<li class="suggestion-item" data-url="<?php echo esc_url(get_term_link($cat)); ?>">
+							<span class="suggestion-icon suggestion-category"><i class="fa fa-folder"></i></span>
+							<a href="<?php echo esc_url(get_term_link($cat)); ?>"><?php echo esc_html($cat->name); ?></a>
+						</li>
+					<?php endforeach; ?>
+				<?php else: ?>
+					<li class="no-suggestion">No suggestions found</li>
+				<?php endif; ?>
+			</ul>
 		</div>
 		<?php if (!empty($suggestions)): ?>
 			<div class="suggestions-container">
@@ -313,6 +334,7 @@ function ica_render_insurers_instant_search($atts) {
                 placeholder="<?php echo $placeholder ?>" 
                 autocomplete="off" spellcheck="false" dir="auto">
             <button class="btn-search-insurer" type="submit" title="Search"><i class="fa fa-search"></i></button>
+            <!-- Suggestion dropdown removed for instant search -->
         </div>
         <div class="categories-container">
             <button id="btn-toggle-categories">
@@ -431,6 +453,92 @@ function ica_insurer_search_ajax() {
 }
 add_action('wp_ajax_ica_insurer_search', 'ica_insurer_search_ajax');
 add_action('wp_ajax_nopriv_ica_insurer_search', 'ica_insurer_search_ajax');
+
+// AJAX handler for insurer/category suggestions
+function ica_insurer_suggestions_ajax() {
+    $search = isset($_POST['search']) ? sanitize_text_field($_POST['search']) : '';
+    $category = isset($_POST['category']) ? intval($_POST['category']) : 0;
+
+    // Get parent categories (only if not filtering by category)
+    $cat_args = [
+        'taxonomy' => 'insurer-category',
+        'hide_empty' => false,
+        'parent' => 0,
+        'number' => 12,
+    ];
+    if ($search) {
+        $cat_args['name__like'] = $search;
+        $cat_args['number'] = 10;
+    }
+    $categories = [];
+    if (!$category) {
+        $categories = get_terms($cat_args);
+    }
+
+    // Get insurers
+    $insurers = [];
+    if ($search) {
+        $insurer_query_args = [
+            'post_type' => 'insurer',
+            's' => $search,
+            'posts_per_page' => 10,
+        ];
+        if ($category) {
+            $insurer_query_args['tax_query'] = [
+                [
+                    'taxonomy' => 'insurer-category',
+                    'field' => 'term_id',
+                    'terms' => $category,
+                    'include_children' => true,
+                ]
+            ];
+        }
+        $insurer_query = new WP_Query($insurer_query_args);
+        if ($insurer_query->have_posts()) {
+            foreach ($insurer_query->posts as $post) {
+                $insurers[] = [
+                    'id' => $post->ID,
+                    'title' => get_the_title($post->ID),
+                    'permalink' => get_permalink($post->ID),
+                ];
+            }
+        }
+    }
+
+    // Format categories
+    $cat_suggestions = [];
+    if (!empty($categories) && !is_wp_error($categories)) {
+        foreach ($categories as $cat) {
+            $cat_suggestions[] = [
+                'type' => 'category',
+                'id' => $cat->term_id,
+                'name' => $cat->name,
+                'permalink' => get_term_link($cat),
+            ];
+        }
+    }
+
+    // Format insurers
+    $insurer_suggestions = [];
+    foreach ($insurers as $insurer) {
+        $insurer_suggestions[] = [
+            'type' => 'insurer',
+            'id' => $insurer['id'],
+            'name' => $insurer['title'],
+            'permalink' => $insurer['permalink'],
+        ];
+    }
+
+    // Merge and limit to 10 if searching
+    $suggestions = array_merge($cat_suggestions, $insurer_suggestions);
+    if ($search) {
+        $suggestions = array_slice($suggestions, 0, 10);
+    }
+
+    wp_send_json($suggestions);
+}
+add_action('wp_ajax_ica_insurer_suggestions', 'ica_insurer_suggestions_ajax');
+add_action('wp_ajax_nopriv_ica_insurer_suggestions', 'ica_insurer_suggestions_ajax');
 
 /**
  * Renders the insurers notice block shortcode

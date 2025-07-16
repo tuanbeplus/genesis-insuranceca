@@ -88,8 +88,97 @@ form.search-form {
         font-size: 22px;
         margin-bottom: 30px;
     }
+    .insurer-suggestion-dropdown {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        z-index: 100;
+        background: #fff;
+        color: #2F2F39;
+        border: 1px solid #ccc;
+        border-top: none;
+        max-height: 386px;
+        overflow-y: auto;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+        list-style: none;
+        margin: 0;
+        padding: 0 !important;
+        transform: translateY(-3px);
+        .suggestion-columns {
+            display: flex;
+            flex-direction: row;
+            min-width: 340px;
+            @media (max-width: 600px) {
+                flex-direction: column;
+                min-width: 0;
+            }
+        }
+        .suggestion-col {
+            flex: 1;
+            min-width: 160px;
+            border-right: 1px solid #f0f0f0;
+            padding: 0 0 0 0;
+            &:last-child {
+                border-right: none;
+            }
+        }
+        .suggestion-col-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #75757A;
+            padding: 6px 16px;
+            border-bottom: 1px solid #f0f0f0;
+            background: #fafbfc;
+        }
+        .suggestion-list {
+            list-style: none;
+            margin: 0;
+            padding: 0 !important;
+        }
+        .suggestion-item {
+            margin: 0 !important;
+            display: flex;
+            align-items: center;
+            font-size: 16px;
+            gap: 10px;
+            padding: 8px 16px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background 0.15s;
+            a {
+                color: #2F2F39;
+                text-decoration: none;
+                font-weight: 500;
+                flex: 1;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                display: block;
+            }
+            .suggestion-icon {
+                text-align: center;
+                color: #2a8164;
+                .fa::before {
+                    font-size: 16px;
+                }
+            }
+            &:hover, &:focus {
+                background: #f7faf9;
+            }
+            &:last-child {
+                border-bottom: none;
+            }
+        }
+        .no-suggestion {
+            padding: 14px 20px;
+            color: #aaa;
+            text-align: left;
+        }
+    }
     .input-container {
-        position: relative;
+        position: relative; // Ensure dropdown is positioned correctly
     }
     input[type=text] {
         padding: 10px 0;
@@ -204,16 +293,6 @@ form.search-form {
             padding: 20px;
             height: 400px;
             max-height: 400px;
-        }
-        &::-webkit-scrollbar {
-            width: 7px;
-        }
-        &::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        &::-webkit-scrollbar-thumb {
-            background-color: #aaa;
-            border-radius: 4px;
         }
         
         &.active {

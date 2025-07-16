@@ -278,4 +278,106 @@
         jQuery(this).toggleClass('active');
     });
 
+    // Suggestion dropdown for insurer search (global and instant)
+    jQuery(function($){
+        function renderSuggestions(suggestions, $dropdown) {
+            // Split suggestions into categories and insurers
+            const categories = suggestions.filter(item => item.type === 'category');
+            const insurers = suggestions.filter(item => item.type === 'insurer');
+            let html = '';
+            // If both are empty, show not found
+            if (!categories.length && !insurers.length) {
+                html = '<div class="no-suggestion">No suggestions found</div>';
+                $dropdown.html(html);
+                return;
+            }
+            html += '<div class="suggestion-columns">';
+            // Only show categories col if not on category page and there are categories
+            const isCategoryPage = $dropdown.closest('form').find('input[name="term_id"]').val();
+            if (!isCategoryPage && categories.length) {
+                html += '<div class="suggestion-col suggestion-col-cat">';
+                html += '<div class="suggestion-col-title">Categories</div>';
+                html += '<ul class="suggestion-list">';
+                categories.forEach(function(item){
+                    html += '<li class="suggestion-item" data-url="'+item.permalink+'">'
+                        + '<span class="suggestion-icon suggestion-category"><i class="fa fa-folder"></i></span>'
+                        + '<a href="'+item.permalink+'">'+item.name+'</a>'
+                        + '</li>';
+                });
+                html += '</ul>';
+                html += '</div>';
+            }
+            // Only show insurers col if there are insurers
+            if (insurers.length) {
+                html += '<div class="suggestion-col suggestion-col-insurer">';
+                html += '<div class="suggestion-col-title">Insurers</div>';
+                html += '<ul class="suggestion-list">';
+                insurers.forEach(function(item){
+                    html += '<li class="suggestion-item" data-url="'+item.permalink+'">'
+                        + '<span class="suggestion-icon suggestion-insurer"><i class="fa fa-shield"></i></span>'
+                        + '<a href="'+item.permalink+'">'+item.name+'</a>'
+                        + '</li>';
+                });
+                html += '</ul>';
+                html += '</div>';
+            }
+            html += '</div>';
+            $dropdown.html(html);
+        }
+
+        function setupSuggestionDropdown($form) {
+            let $input = $form.find('.search-insurer-input');
+            let $dropdown = $form.find('.insurer-suggestion-dropdown');
+            let termId = $form.find('input[name="term_id"]').val() || '';
+
+            // Store default HTML for reset
+            $dropdown.data('default-html', $dropdown.html());
+
+            // Show dropdown on focus (no AJAX if input is empty)
+            $input.on('focus', function(){
+                if ($input.val().trim() === '') {
+                    $dropdown.html($dropdown.data('default-html'));
+                    $dropdown.slideDown(120);
+                }
+            });
+
+            // Fetch suggestions on input
+            $input.on('input', function(){
+                let val = $(this).val();
+                if (val.trim() === '') {
+                    $dropdown.html($dropdown.data('default-html'));
+                    $dropdown.slideDown(120);
+                    return;
+                }
+                // Pass term_id for instant search (category page)
+                let data = {action: 'ica_insurer_suggestions', search: val};
+                if (termId) data['category'] = termId;
+                $.post(ICA_AJAX.ajax_url, data, function(res){
+                    renderSuggestions(res, $dropdown);
+                    $dropdown.slideDown(120);
+                });
+            });
+
+            // Hide dropdown when clicking outside the input or dropdown
+            $(document).on('mousedown.ica-suggestion', function(e){
+                if (
+                    !$input.is(e.target) && $input.has(e.target).length === 0 &&
+                    !$dropdown.is(e.target) && $dropdown.has(e.target).length === 0
+                ) {
+                    $dropdown.slideUp(120);
+                }
+            });
+
+            // Click on suggestion
+            $dropdown.on('mousedown', '.suggestion-item', function(e){
+                e.preventDefault();
+                window.location.href = $(this).data('url');
+            });
+        }
+
+        // Only apply suggestion dropdown to global search form
+        setupSuggestionDropdown($('form.insurers-global-search'));
+        // Do NOT apply to instant search
+    });
+
 } )( window, jQuery )
