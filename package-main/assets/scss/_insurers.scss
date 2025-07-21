@@ -1,4 +1,5 @@
-body.post-type-archive-insurer, body.tax-insurer-category {
+body.post-type-archive-insurer,
+body.tax-insurer-category {
     .archive-description {
         display: none;
     }
@@ -61,11 +62,11 @@ body.post-type-archive-insurer, body.tax-insurer-category {
     gap: 12px;
     flex-wrap: wrap;
     a {
-        color: #9B9B9B;
+        color: #9b9b9b;
     }
     .fa.fa-angle-right::before {
         font-size: 20px;
-        color: #9B9B9B;
+        color: #9b9b9b;
     }
 }
 
@@ -74,7 +75,7 @@ form.search-form {
     overflow: unset;
     margin-bottom: 40px;
     padding: 30px 40px 50px;
-    background-color: #75757A;
+    background-color: #75757a;
     color: #fff;
     &.loading {
         background-color: #8a8a92;
@@ -96,12 +97,12 @@ form.search-form {
         right: 0;
         z-index: 100;
         background: #fff;
-        color: #2F2F39;
+        color: #2f2f39;
         border: 1px solid #ccc;
         border-top: none;
         max-height: 386px;
         overflow-y: auto;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
         list-style: none;
         margin: 0;
         padding: 0 !important;
@@ -127,7 +128,7 @@ form.search-form {
         .suggestion-col-title {
             font-size: 14px;
             font-weight: 700;
-            color: #75757A;
+            color: #75757a;
             padding: 6px 16px;
             border-bottom: 1px solid #f0f0f0;
             background: #fafbfc;
@@ -147,8 +148,9 @@ form.search-form {
             cursor: pointer;
             border-bottom: 1px solid #f0f0f0;
             transition: background 0.15s;
+            flex-wrap: wrap;
             a {
-                color: #2F2F39;
+                color: #2f2f39;
                 text-decoration: none;
                 font-weight: 500;
                 flex: 1;
@@ -163,8 +165,12 @@ form.search-form {
                 .fa::before {
                     font-size: 16px;
                 }
+                &.suggestion-category {
+                    display: none;
+                }
             }
-            &:hover, &:focus {
+            &:hover,
+            &:focus {
                 background: #f7faf9;
             }
             &:last-child {
@@ -176,11 +182,52 @@ form.search-form {
             color: #aaa;
             text-align: left;
         }
+        // Child category suggestions
+        .child-suggestions {
+            list-style: none;
+            margin: 0 !important;
+            padding: 0 !important;
+            border-top: 1px solid #e9ecef;
+            width: 100%;
+            .suggestion-item {
+                padding: 6px 16px 6px 25px;
+                font-size: 14px; 
+                border-bottom: 1px solid #e9ecef;
+                position: relative;
+                &::before {
+                    content: "";
+                    position: absolute;
+                    left: 12px;
+                    top: 15px;
+                    width: 5px;
+                    height: 5px;
+                    background-color: #6c757d;
+                    border-radius: 50%;
+                }
+                &:last-child {
+                    border-bottom: none;
+                    padding-bottom: 0;
+                }
+                .suggestion-icon {
+                    color: #6c757d; 
+                }
+                a {
+                    font-weight: 400; 
+                    color: #495057; 
+                }
+                &:hover,
+                &:focus {
+                    a {
+                        color: #000;
+                    }
+                }
+            }
+        }
     }
     .input-container {
         position: relative; // Ensure dropdown is positioned correctly
     }
-    input[type=text] {
+    input[type="text"] {
         padding: 10px 0;
         padding-right: 30px;
         font-size: 33px;
@@ -285,8 +332,8 @@ form.search-form {
         left: 0;
         right: 0;
         padding: 30px 32px;
-        background-color: #D8D8D8;
-        color: #2F2F39;
+        background-color: #d8d8d8;
+        color: #2f2f39;
         overflow: auto;
         box-shadow: 0 4px 10px rgb(0 0 0 / 15%);
         @media (max-width: 767px) {
@@ -294,7 +341,7 @@ form.search-form {
             height: 400px;
             max-height: 400px;
         }
-        
+
         &.active {
             display: block;
         }
@@ -311,7 +358,7 @@ form.search-form {
             font-size: 18px;
             line-height: 1;
             font-weight: 500;
-            color: #2F2F39;
+            color: #2f2f39;
             background-color: transparent;
             border-radius: 0;
             .icon {
@@ -348,7 +395,7 @@ form.search-form {
             li {
                 font-size: 16px;
                 list-style: none !important;
-                input[type=radio] {
+                input[type="radio"] {
                     position: absolute;
                     opacity: 0;
                     + label {
@@ -357,25 +404,25 @@ form.search-form {
                         cursor: pointer;
                         padding-left: 30px;
                         &:before {
-                            content: '';
+                            content: "";
                             position: absolute;
                             left: 0;
                             top: 2px;
                             width: 20px;
                             height: 20px;
-                            border: 2px solid #2F2F39;
+                            border: 2px solid #2f2f39;
                             border-radius: 50%;
                             background: transparent;
                         }
                         &:after {
-                            content: '';
+                            content: "";
                             position: absolute;
                             left: 5px;
                             top: 7px;
                             width: 10px;
                             height: 10px;
                             border-radius: 50%;
-                            background: #2F2F39;
+                            background: #2f2f39;
                             opacity: 0;
                             transition: opacity 0.2s;
                         }
@@ -444,7 +491,7 @@ form.search-form {
         border-radius: 0;
         background-color: transparent;
         font-size: 18px;
-        color: #2F2F39;
+        color: #2f2f39;
         .icon {
             display: flex;
             justify-content: center;
@@ -474,10 +521,10 @@ form.search-form {
         transform: translateY(100%);
         font-size: 15px;
         color: #fff;
-        background-color: #75757A;
+        background-color: #75757a;
         transition: all 0.2s;
         box-shadow: 0 4px 8px rgb(0 0 0 / 10%);
-        input[type=radio] {
+        input[type="radio"] {
             position: absolute;
             opacity: 0;
             + label {
@@ -485,7 +532,7 @@ form.search-form {
                 cursor: pointer;
                 padding-left: 26px;
                 &:before {
-                    content: '';
+                    content: "";
                     position: absolute;
                     left: 0;
                     top: 0;
@@ -496,7 +543,7 @@ form.search-form {
                     background: transparent;
                 }
                 &:after {
-                    content: '';
+                    content: "";
                     position: absolute;
                     left: 4px;
                     top: 4px;
@@ -584,11 +631,11 @@ form.search-form {
                 overflow: hidden;
                 display: -webkit-box;
                 -webkit-line-clamp: 2; /* number of lines to show */
-                        line-clamp: 2; 
+                line-clamp: 2;
                 -webkit-box-orient: vertical;
             }
             .view-details {
-                color: #2F2F39;
+                color: #2f2f39;
                 text-decoration: underline;
                 text-underline-offset: 2px;
                 font-size: 16px;
@@ -614,8 +661,8 @@ form.search-form {
     margin: 40px auto 0;
     padding: 12px 40px;
     background: #fff;
-    color: #2F2F39;
-    border: 1px solid #2F2F39;
+    color: #2f2f39;
+    border: 1px solid #2f2f39;
     border-radius: 0;
     font-size: 17px;
     font-weight: 600;
@@ -623,12 +670,12 @@ form.search-form {
     transition: all 0s;
     &:hover {
         background: #f2f2f2;
-        color: #2F2F39;
-        border: 1px solid #2F2F39;
+        color: #2f2f39;
+        border: 1px solid #2f2f39;
     }
     &:focus {
         background-color: inherit;
-        border: 1px solid #2F2F39 !important;
+        border: 1px solid #2f2f39 !important;
         color: inherit;
         outline: none;
     }
@@ -680,7 +727,7 @@ form.search-form {
             background-color: #2a8164;
         }
         &.disclaimer-notice {
-            background-color: #75757A;
+            background-color: #75757a;
         }
     }
 }
@@ -692,7 +739,7 @@ form.search-form {
     }
     h3 {
         font-size: 18px;
-        color: #2F2F39;
+        color: #2f2f39;
     }
     .insurer-categories-buttons {
         padding: 0 !important;
@@ -755,7 +802,8 @@ form.search-form {
             padding-bottom: 24px;
             margin: 20px 0 40px;
         }
-        img.wp-post-image, img.placeholder-img {
+        img.wp-post-image,
+        img.placeholder-img {
             display: block;
             width: 150px;
         }
@@ -795,17 +843,21 @@ form.search-form {
 /* Spinner Circle Rotation */
 .ica-spinner {
     width: 24px;
-	height: 24px;
-	clear: both;
+    height: 24px;
+    clear: both;
     border: 3px solid #ddd;
-	border-top: 3px solid #666;
-	border-radius: 50%;
-	-webkit-animation: spCircRot .6s infinite linear;
-	animation: spCircRot .6s infinite linear;
+    border-top: 3px solid #666;
+    border-radius: 50%;
+    -webkit-animation: spCircRot 0.6s infinite linear;
+    animation: spCircRot 0.6s infinite linear;
 }
 @keyframes spCircRot {
-	from { transform: rotate(0deg); }
-	to { transform: rotate(359deg); }
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(359deg);
+    }
 }
 
 .insurers-categories-list {
@@ -827,7 +879,7 @@ form.search-form {
         width: 100%;
         background: none;
         border: none;
-        color: #2F2F39;
+        color: #2f2f39;
         font-size: 22px;
         font-weight: 500;
         display: flex;
