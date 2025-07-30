@@ -91,6 +91,7 @@
             let termId = formWrapper.find('input[name="term_id"]').val();
             let category = formWrapper.find('input[name="insurer_category"]:checked').val() || '';
             let sortBy = $('.insurer-sort-bar input[name="sort_by"]:checked').val() || '';
+            let distributionMethod = formWrapper.find('input[name="distribution_method"]:checked').val() || 'direct';
             if (reset) paged = 1;
             formWrapper.addClass('loading');
             $.ajax({
@@ -102,7 +103,8 @@
                     category: category,
                     paged: paged,
                     sort_by: sortBy,
-                    term_id: termId
+                    term_id: termId,
+                    distribution_method: distributionMethod
                 },
                 beforeSend: function() {
                     if (reset) $('.insurer-results').html('<div class="loading">Loading...</div>');
@@ -143,6 +145,11 @@
                     } else {
                         params.delete('sort');
                     }
+                    if (distributionMethod && distributionMethod !== 'direct') {
+                        params.set('distribution_method', distributionMethod);
+                    } else {
+                        params.delete('distribution_method');
+                    }
                     let newUrl = window.location.pathname + '?' + params.toString();
                     window.history.replaceState({}, '', newUrl);
                     formWrapper.removeClass('loading');
@@ -177,6 +184,11 @@
         });
         // On sort change
         $(document).on('change', 'input[name="sort_by"]', function(){
+            paged = 1;
+            fetchInsurers(true);
+        });
+        // On distribution method change
+        $(document).on('change', 'input[name="distribution_method"]', function(){
             paged = 1;
             fetchInsurers(true);
         });

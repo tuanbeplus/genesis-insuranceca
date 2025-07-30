@@ -274,3 +274,140 @@ if( function_exists('acf_add_options_sub_page') ) {
     ));
 }
 
+// --- Custom Metabox for Insurer Distribution Method ---
+add_action('add_meta_boxes', function() {
+    add_meta_box(
+        'insurer_distribution_method',
+        __('Distribution Method by Product Type', 'genesis-insuranceca'),
+        'insuranceca_insurer_distribution_metabox',
+        'insurer',
+        'normal',
+        'default'
+    );
+});
+
+function insuranceca_insurer_distribution_metabox($post) {
+    $taxonomy = 'insurer-category';
+    $saved = get_post_meta($post->ID, 'insurer_distribution_method', true);
+    if (!is_array($saved)) $saved = [];
+    // Get checked term IDs from the post
+    $checked_terms = wp_get_object_terms($post->ID, $taxonomy, ['fields' => 'ids']);
+    if (empty($checked_terms)) {
+        echo '<p style="color:#a00;">Please select categories and subcategories in the Insurer Categories box first.</p>';
+        return;
+    }
+    // Get all checked terms (main and subcategories)
+    $checked_terms_objs = get_terms([
+        'taxonomy' => $taxonomy,
+        'include' => $checked_terms,
+        'hide_empty' => false,
+    ]);
+    // Group subcategories by parent
+    $main_cats = [];
+    $subcats_by_parent = [];
+    foreach ($checked_terms_objs as $term) {
+        if ($term->parent == 0) {
+            $main_cats[$term->term_id] = $term;
+        } else {
+            $subcats_by_parent[$term->parent][] = $term;
+        }
+    }
+    // Only show main categories that have checked subcategories
+    echo '<style>
+	.insurer-distribution-metabox {
+		margin: 20px 10px 0;
+	}
+	.insurer-distribution-metabox table.widefat {
+		border-collapse: collapse;
+		width: 100%;
+		background: #fff;
+		margin-bottom: 1em;
+	}
+	.insurer-distribution-metabox table.widefat th, .insurer-distribution-metabox table.widefat td {
+		border: 1px solid #e1e1e1;
+		padding: 10px 12px;
+		vertical-align: middle;
+		font-size: 14px;
+		color: #333;
+	}
+	.insurer-distribution-metabox table.widefat th {
+		background: #f8f9fa;
+		font-weight: 600;
+	}
+	.insurer-distribution-metabox table.widefat tbody tr:nth-child(even) {
+		background: #f6f8fa;
+	}
+	.insurer-distribution-metabox table tr td label {
+		margin-right: 24px;
+		font-weight: 400;
+		font-size: 13px;
+		white-space: nowrap;
+		cursor: pointer;
+	}
+	.insurer-distribution-metabox input[type=radio] {
+		margin-right: 4px;
+		vertical-align: middle;
+	}
+	.insurer-distribution-metabox table tr.error {
+		background-color: #ffebee !important;
+		border-left: 4px solid #f44336;
+	}
+	.insurer-distribution-metabox table tr.error td {
+		color: #d32f2f;
+	}
+	</style>';
+    echo '<div class="insurer-distribution-metabox">';
+    echo '<table class="widefat"><thead><tr><th>Category</th><th>Product Type</th><th>Distribution Method</th></tr></thead><tbody>';
+    $has_rows = false;
+    foreach ($main_cats as $main_id => $main_cat) {
+        // If no subcats, treat the main cat as its own subcat
+        $subcats = !empty($subcats_by_parent[$main_id]) ? $subcats_by_parent[$main_id] : [ $main_cat ];
+        $rowspan = count($subcats);
+        foreach ($subcats as $i => $subcat) {
+            $has_rows = true;
+            $field_name = 'insurer_distribution[' . $subcat->term_id . ']';
+            $val = $saved[$subcat->term_id] ?? 'direct';
+            echo '<tr>';
+            if ($i === 0) {
+                echo '<td rowspan="' . $rowspan . '" style="vertical-align:middle;background:#fff;font-size:15px;">' . esc_html($main_cat->name) . '</td>';
+            }
+            echo '<td>' . esc_html($subcat->name) . '</td>';
+            echo '<td>';
+            foreach ([
+                'direct' => __('Direct', 'genesis-insuranceca'),
+                'broker' => __('Through a Broker', 'genesis-insuranceca'),
+                'both' => __('Both', 'genesis-insuranceca'),
+            ] as $key => $label) {
+                echo '<label>';
+                echo '<input type="radio" name="' . esc_attr($field_name) . '" value="' . esc_attr($key) . '"' . checked($val, $key, false) . '> ' . esc_html($label);
+                echo '</label>';
+            }
+            echo '</td>';
+            echo '</tr>';
+        }
+    }
+    if (!$has_rows) {
+        echo '<tr><td colspan="3" style="color:#a00;">No checked product types found. Please check product types in the Insurer Categories box.</td></tr>';
+    }
+    echo '</tbody></table>';
+    echo '</div>';
+}
+
+add_action('save_post_insurer', function($post_id) {
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) return;
+    if (!current_user_can('edit_post', $post_id)) return;
+    if (isset($_POST['insurer_distribution'])) {
+        $clean = [];
+        foreach ($_POST['insurer_distribution'] as $term_id => $method) {
+            $term_id = intval($term_id);
+            $method = in_array($method, ['direct','broker','both']) ? $method : 'direct';
+            $clean[$term_id] = $method;
+        }
+        update_post_meta($post_id, 'insurer_distribution_method', $clean);
+    } else {
+        delete_post_meta($post_id, 'insurer_distribution_method');
+    }
+});
+
+
+

@@ -438,6 +438,66 @@ form.search-form {
             }
         }
     }
+    .distribution-method-container {
+        margin-top: 50px;
+        h4 {
+            margin-bottom: 16px;
+            font-size: 17px;
+            font-weight: 600;
+        }
+        ul.distribution-method-options {
+            margin: 0;
+            padding: 0 !important;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 32px;
+            li {
+                margin-bottom: 0;
+                font-size: 16px;
+                list-style: none !important;
+                input[type="radio"] {
+                    position: absolute;
+                    opacity: 0;
+                    + label {
+                        margin: 0;
+                        position: relative;
+                        cursor: pointer;
+                        padding-left: 26px;
+                        &:before {
+                            content: "";
+                            position: absolute;
+                            left: 0;
+                            top: 4px;
+                            width: 18px;
+                            height: 18px;
+                            border: 2px solid #fff;
+                            border-radius: 50%;
+                            background: transparent;
+                        }
+                        &:after {
+                            content: "";
+                            position: absolute;
+                            left: 4px;
+                            top: 8px;
+                            width: 10px;
+                            height: 10px;
+                            border-radius: 50%;
+                            background: #fff;
+                            opacity: 0;
+                            transition: opacity 0.2s;
+                        }
+                    }
+                    &:checked + label:after {
+                        opacity: 1;
+                    }
+                }
+                label {
+                    display: inline-block;
+                    margin-bottom: 8px;
+                }
+            }
+        }
+    }
     #btn-remove-category {
         width: 23px;
         height: 23px;

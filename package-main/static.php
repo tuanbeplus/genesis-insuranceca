@@ -28,6 +28,20 @@
       }
   }
 
+  // Enqueue admin JS for insurer metabox
+  add_action('admin_enqueue_scripts', function() {
+      global $post;
+      if (isset($post) && $post->post_type === 'insurer') {
+          wp_enqueue_script(
+              'ica-admin-insurer-metabox',
+              PJ_URI . 'assets/js/admin-insurer-metabox.js',
+              ['jquery'],
+              PJ_VERSION,
+              true
+          );
+      }
+  });
+
   {
     /**
      * Compiler Scss
