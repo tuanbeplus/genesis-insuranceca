@@ -202,28 +202,40 @@ function ica_get_insurer_query_results($params) {
     $meta_query = [];
 
     if (!empty($distribution_method) && $distribution_method !== 'all') {
-        $filter_category_ids = array_unique(array_filter(array_merge(
-            $category ? [$category] : [],
-            $category_ids_from_search
-        )));
+        $filter_category_ids = [];
 
+        if (!empty($category)) {
+            $filter_category_ids[] = $category;
+        } elseif (!empty($force_category)) {
+            $child_terms = get_terms([
+                'taxonomy' => 'insurer-category',
+                'hide_empty' => false,
+                'parent' => $force_category,
+                'fields' => 'ids',
+            ]);
+            if (!is_wp_error($child_terms)) {
+                $filter_category_ids = $child_terms;
+            }
+        } elseif (!empty($category_ids_from_search)) {
+            $filter_category_ids = $category_ids_from_search;
+        }
+
+        $filter_category_ids = array_unique(array_filter($filter_category_ids));
         $or_conditions = ['relation' => 'OR'];
 
         if (!empty($filter_category_ids)) {
             foreach ($filter_category_ids as $cat_id) {
-                // Match exact JSON structure in serialized PHP format
                 $or_conditions[] = [
                     'key' => 'insurer_distribution_method',
-                    'value' =>  sprintf('i:%d;s:%d:"%s";', $cat_id, strlen($distribution_method), $distribution_method),
-                    'compare' => 'LIKE'
+                    'value' => sprintf('i:%d;s:%d:"%s";', $cat_id, strlen($distribution_method), $distribution_method),
+                    'compare' => 'LIKE',
                 ];
             }
         } else {
-            // Fallback: broad LIKE search (less accurate)
             $or_conditions[] = [
                 'key' => 'insurer_distribution_method',
                 'value' => sprintf('s:%d:"%s"', strlen($distribution_method), $distribution_method),
-                'compare' => 'LIKE'
+                'compare' => 'LIKE',
             ];
         }
 
@@ -280,9 +292,8 @@ function ica_get_insurer_query_results($params) {
             $query->the_post();
             $through_a_broker = get_field('through_a_broker', get_the_ID());
             $broker_url = get_field('broker_website_url', 'option') ?: 'https://www.needabroker.com.au/';
-            $post_categories = get_the_terms(get_the_ID(), 'insurer-category');
-            $dist_method = get_post_meta(get_the_ID(), 'insurer_distribution_method', true);
-            // print_r($dist_method);
+            $distribution_map = get_post_meta(get_the_ID(), 'insurer_distribution_method', true);
+            $distribution_map = is_array($distribution_map) ? $distribution_map : [];
             ?>
             <div class="insurer-card">
                 <div class="insurer-logo">
@@ -293,7 +304,7 @@ function ica_get_insurer_query_results($params) {
                     <?php endif; ?>
                 </div>
                 <div class="insurer-info">
-                    <h4><?php the_title(); ?></h4>
+                    <h4><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></h4>
                     <div class="insurer-meta">
                         <?php if ($through_a_broker): ?>
                             <div>Products offered <a href="<?php echo esc_url($broker_url); ?>" target="_blank">through a broker only</a></div>
@@ -304,22 +315,35 @@ function ica_get_insurer_query_results($params) {
                     </div>
                     <div class="insurer-products">
                         <?php
-                        $distribution_map = get_post_meta(get_the_ID(), 'insurer_distribution_method', true);
-                        $distribution_map = is_array($distribution_map) ? $distribution_map : [];
-                        if (!empty($category)) {
-                            // If filtering by category, check both term and method
+                        if (!empty($force_category)) {
+                            $post_categories = get_the_terms(get_the_ID(), 'insurer-category');
+                            if ($post_categories && !is_wp_error($post_categories)) {
+                                $child_categories = array_filter($post_categories, fn($cat) => $cat->parent == $force_category);
+                                $filtered = [];
+                                foreach ($child_categories as $cat) {
+                                    $cat_id = $cat->term_id;
+                                    $method = $distribution_map[$cat_id] ?? 'direct';
+                                    $match = $distribution_method === 'all' || 
+                                            ($distribution_method === 'direct' && in_array($method, ['direct', ''])) ||
+                                            ($distribution_method === 'broker' && $method === 'broker') ||
+                                            ($distribution_method === 'both' && $method === 'both');
+                                    if ($match) {
+                                        $filtered[] = $cat;
+                                    }
+                                    if (count($filtered) >= 10) break;
+                                }
+                                if (!empty($filtered)) {
+                                    $category_names = array_map(fn($cat) => $cat->name, $filtered);
+                                    echo 'Products offered: ' . esc_html(implode(', ', $category_names));
+                                }
+                            }
+                        } elseif (!empty($category)) {
                             if (has_term($category, 'insurer-category', get_the_ID())) {
                                 $method = $distribution_map[$category] ?? 'direct';
-                                $match = false;
-                                if ($distribution_method === 'both') {
-                                    $match = in_array($method, ['both']);
-                                } elseif ($distribution_method === 'direct') {
-                                    $match = in_array($method, ['direct', '']);
-                                } elseif ($distribution_method === 'broker') {
-                                    $match = in_array($method, ['broker']);
-                                } else {
-                                    $match = true;
-                                }
+                                $match = $distribution_method === 'all' || 
+                                        ($distribution_method === 'direct' && in_array($method, ['direct', ''])) ||
+                                        ($distribution_method === 'broker' && $method === 'broker') ||
+                                        ($distribution_method === 'both' && $method === 'both');
                                 if ($match) {
                                     $term = get_term($category, 'insurer-category');
                                     if ($term && !is_wp_error($term) && $term->parent != 0) {
@@ -328,7 +352,6 @@ function ica_get_insurer_query_results($params) {
                                 }
                             }
                         } else {
-                            // No filter → show up to 10 subcategories, but must match method
                             $post_categories = get_the_terms(get_the_ID(), 'insurer-category');
                             if ($post_categories && !is_wp_error($post_categories)) {
                                 $child_categories = array_filter($post_categories, fn($cat) => $cat->parent != 0);
@@ -336,16 +359,10 @@ function ica_get_insurer_query_results($params) {
                                 foreach ($child_categories as $cat) {
                                     $cat_id = $cat->term_id;
                                     $method = $distribution_map[$cat_id] ?? 'direct';
-                                    $match = false;
-                                    if ($distribution_method === 'both') {
-                                        $match = in_array($method, ['both']);
-                                    } elseif ($distribution_method === 'direct') {
-                                        $match = in_array($method, ['direct', '']);
-                                    } elseif ($distribution_method === 'broker') {
-                                        $match = in_array($method, ['broker']);
-                                    } else {
-                                        $match = true;
-                                    }
+                                    $match = $distribution_method === 'all' || 
+                                            ($distribution_method === 'direct' && in_array($method, ['direct', ''])) ||
+                                            ($distribution_method === 'broker' && $method === 'broker') ||
+                                            ($distribution_method === 'both' && $method === 'both');
                                     if ($match) {
                                         $filtered[] = $cat;
                                     }

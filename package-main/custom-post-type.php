@@ -289,6 +289,7 @@ add_action('add_meta_boxes', function() {
 function insuranceca_insurer_distribution_metabox($post) {
     $taxonomy = 'insurer-category';
     $saved = get_post_meta($post->ID, 'insurer_distribution_method', true);
+
     if (!is_array($saved)) $saved = [];
     // Get checked term IDs from the post
     $checked_terms = wp_get_object_terms($post->ID, $taxonomy, ['fields' => 'ids']);
@@ -312,6 +313,47 @@ function insuranceca_insurer_distribution_metabox($post) {
             $subcats_by_parent[$term->parent][] = $term;
         }
     }
+    // Output all terms for JS
+    $all_terms = get_terms([
+        'taxonomy' => $taxonomy,
+        'hide_empty' => false,
+    ]);
+    $terms_js = [];
+    foreach ($all_terms as $term) {
+        $terms_js[$term->term_id] = [
+            'id' => $term->term_id,
+            'name' => $term->name,
+            'parent' => $term->parent,
+        ];
+    }
+    echo '<script>window.insurerCategoriesTerms = ' . json_encode($terms_js) . ';</script>';
+    // Output the order of terms as in the checklist (parents then children, both by name ASC)
+    function get_ordered_term_ids($taxonomy) {
+        $terms = get_terms([
+            'taxonomy' => $taxonomy,
+            'hide_empty' => false,
+            'parent' => 0,
+            'orderby' => 'name',
+            'order' => 'ASC',
+        ]);
+        $ordered = [];
+        foreach ($terms as $parent) {
+            $ordered[] = $parent->term_id;
+            $children = get_terms([
+                'taxonomy' => $taxonomy,
+                'hide_empty' => false,
+                'parent' => $parent->term_id,
+                'orderby' => 'name',
+                'order' => 'ASC',
+            ]);
+            foreach ($children as $child) {
+                $ordered[] = $child->term_id;
+            }
+        }
+        return $ordered;
+    }
+    $ordered_term_ids = get_ordered_term_ids($taxonomy);
+    echo '<script>window.insurerCategoriesOrder = ' . json_encode($ordered_term_ids) . ';</script>';
     // Only show main categories that have checked subcategories
     echo '<style>
 	.insurer-distribution-metabox {
