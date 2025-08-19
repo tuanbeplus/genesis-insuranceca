@@ -47,11 +47,10 @@ jQuery(document).ready(function($) {
                 }
                 html += '<td>' + subcat.name + '</td>';
                 html += '<td>';
-                ['direct', 'broker', 'both'].forEach(function(key) {
+                ['direct', 'broker'].forEach(function(key) {
                     var label = {
                         'direct': 'Direct',
-                        'broker': 'Through a Broker',
-                        'both': 'Both'
+                        'broker': 'Through a Broker'
                     }[key];
                     html += '<label>';
                     html += '<input type="radio" name="' + fieldName + '" value="' + key + '"' + (val === key ? ' checked' : '') + '> ' + label;
@@ -95,4 +94,4 @@ jQuery(document).ready(function($) {
 
     // Initial update on page load
     updateDistributionTable();
-}); 
+});

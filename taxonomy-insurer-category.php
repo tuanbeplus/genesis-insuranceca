@@ -10,6 +10,15 @@ echo '<main class="content">';
 
 $term = get_queried_object();
 
+// Check if current term has parent (is child category)
+if ($term->parent != 0) {
+    echo '<style>
+        body form.search-form .categories-container {
+            display: none !important;
+        }
+    </style>';
+}
+
 ica_insurer_breadcrumbs();
 
 echo '<h1>' . esc_html($term->name) . '</h1>';

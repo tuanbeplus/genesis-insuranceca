@@ -418,7 +418,6 @@ function insuranceca_insurer_distribution_metabox($post) {
             foreach ([
                 'direct' => __('Direct', 'genesis-insuranceca'),
                 'broker' => __('Through a Broker', 'genesis-insuranceca'),
-                'both' => __('Both', 'genesis-insuranceca'),
             ] as $key => $label) {
                 echo '<label>';
                 echo '<input type="radio" name="' . esc_attr($field_name) . '" value="' . esc_attr($key) . '"' . checked($val, $key, false) . '> ' . esc_html($label);
@@ -442,7 +441,7 @@ add_action('save_post_insurer', function($post_id) {
         $clean = [];
         foreach ($_POST['insurer_distribution'] as $term_id => $method) {
             $term_id = intval($term_id);
-            $method = in_array($method, ['direct','broker','both']) ? $method : 'direct';
+            $method = in_array($method, ['direct','broker']) ? $method : 'direct';
             $clean[$term_id] = $method;
         }
         update_post_meta($post_id, 'insurer_distribution_method', $clean);
