@@ -82,80 +82,335 @@
 
     });
 
-    // AJAX logic for insurer instant search and load more
+    // Client-side logic for insurer instant search and load more (no AJAX)
     jQuery(function($){
         let paged = 1;
-        function fetchInsurers(reset = false) {
-            const formWrapper = $('form.insurers-instant-search');
-            let search = formWrapper.find('input.search-insurer-input').val();
-            let termId = formWrapper.find('input[name="term_id"]').val();
-            let category = formWrapper.find('input[name="insurer_category"]:checked').val() || '';
-            let sortBy = $('.insurer-sort-bar input[name="sort_by"]:checked').val() || '';
-            let distributionMethod = formWrapper.find('input[name="distribution_method"]:checked').val() || 'direct';
-            if (reset) paged = 1;
-            formWrapper.addClass('loading');
-            $.ajax({
-                url: ICA_AJAX.ajax_url,
-                type: 'POST',
-                data: {
-                    action: 'ica_insurer_search',
-                    search: search,
-                    category: category,
-                    paged: paged,
-                    sort_by: sortBy,
-                    term_id: termId,
-                    distribution_method: distributionMethod
-                },
-                beforeSend: function() {
-                    if (reset) $('.insurer-results').html('<div class="loading">Loading...</div>');
-                    $('.load-more-insurers').addClass('loading');
-                },
-                success: function(res) {
-                    if (reset) {
-                        $('.insurer-results').html(res.html);
-                    } else {
-                        $('.insurer-results').append(res.html);
-                    }
-                    if (res.has_more) {
-                        $('.load-more-insurers').show();
-                    }
-                    else {
-                        $('.load-more-insurers').hide();
-                    }
-                    // Update results count
-                    if ($('.insurer-results-count').length && typeof res.shown_count !== 'undefined' && typeof res.total_count !== 'undefined') {
-                        $('.insurer-results-count').text('Showing ' + res.shown_count + ' of ' + res.total_count + ' results');
-                    }
-                    // Update URL
-                    let params = new URLSearchParams(window.location.search);
-                    if (search) {
-                        params.set('search', search);
-                        $('.key-search').text(search);
-                    } else {
-                        params.delete('search');
-                        $('.key-search').text('');
-                    }
-                    if (category) {
-                        params.set('category', category);
-                    } else {
-                        params.delete('category');
-                    }
-                    if (sortBy) {
-                        params.set('sort', sortBy);
-                    } else {
-                        params.delete('sort');
-                    }
-                    if (distributionMethod && distributionMethod !== 'direct') {
-                        params.set('distribution_method', distributionMethod);
-                    } else {
-                        params.delete('distribution_method');
-                    }
-                    let newUrl = window.location.pathname + '?' + params.toString();
-                    window.history.replaceState({}, '', newUrl);
-                    formWrapper.removeClass('loading');
-                    $('.load-more-insurers').removeClass('loading');
+        const perPage = 10;
+
+        const $formWrapper = $('form.insurers-instant-search');
+        const $resultsContainer = $('.insurer-results');
+        const $resultsCount = $('.insurer-results-count');
+        const $loadMoreBtn = $('.load-more-insurers');
+
+        // Parse JSON datasets from hidden inputs
+        let categoriesData = [];
+        let insurersData = [];
+        try {
+            const categoryJson = $formWrapper.find('#search_category_json').val();
+            const insurerJson = $formWrapper.find('#search_insurer_json').val();
+            categoriesData = categoryJson ? JSON.parse(categoryJson) : [];
+            insurersData = insurerJson ? JSON.parse(insurerJson) : [];
+        } catch (e) {
+            // eslint-disable-next-line no-console
+            console.error('Failed to parse insurers/categories JSON', e);
+            categoriesData = [];
+            insurersData = [];
+        }
+
+        // Build category maps/helpers
+        const categoriesById = {};
+        categoriesData.forEach(c => { categoriesById[parseInt(c.id, 10)] = c; });
+
+        function parentHasChildren(parentId) {
+            parentId = parseInt(parentId || 0, 10);
+            if (!parentId) return false;
+            for (let i = 0; i < categoriesData.length; i++) {
+                const c = categoriesData[i];
+                if (parseInt(c.parent_id || 0, 10) === parentId) {
+                    return true;
                 }
-            });
+            }
+            return false;
+        }
+
+        function hasAncestor(categoryId, ancestorId) {
+            let current = categoriesById[parseInt(categoryId, 10)];
+            while (current && current.parent_id && parseInt(current.parent_id, 10) !== 0) {
+                if (parseInt(current.parent_id, 10) === parseInt(ancestorId, 10)) return true;
+                current = categoriesById[parseInt(current.parent_id, 10)];
+            }
+            return false;
+        }
+
+        function getChildTermIdsOf(parentId) {
+            parentId = parseInt(parentId || 0, 10);
+            if (!parentId) return [];
+            return categoriesData
+                .filter(c => parseInt(c.parent_id || 0, 10) === parentId)
+                .map(c => parseInt(c.id, 10));
+        }
+
+        function getCategoryIdsFromSearch(searchLower) {
+            if (!searchLower) return [];
+            return categoriesData
+                .filter(c => (c.name || '').toLowerCase().includes(searchLower))
+                .map(c => parseInt(c.id, 10));
+        }
+
+        function matchesTaxConditions(insurer, pageCatId, selectedCategoryId, categoryIdsFromSearch) {
+            const insurerCatIds = (insurer.category_ids || []).map(id => parseInt(id, 10));
+            const conditions = [];
+            const pageId = parseInt(pageCatId || 0, 10);
+            const selectedId = parseInt(selectedCategoryId || 0, 10);
+
+            if (pageId && selectedId) {
+                conditions.push(insurerCatIds.includes(selectedId));
+            } else if (pageId) {
+                // include_children = true
+                conditions.push(
+                    insurerCatIds.some(cid => cid === pageId || hasAncestor(cid, pageId))
+                );
+            } else if (selectedId) {
+                conditions.push(insurerCatIds.includes(selectedId));
+            }
+
+            if (Array.isArray(categoryIdsFromSearch) && categoryIdsFromSearch.length) {
+                conditions.push(
+                    insurerCatIds.some(cid => categoryIdsFromSearch.includes(cid) || categoryIdsFromSearch.some(sid => hasAncestor(cid, sid)))
+                );
+            }
+
+            // If no tax conditions built, treat as pass
+            if (!conditions.length) return true;
+            // Relation OR
+            return conditions.some(Boolean);
+        }
+
+        function matchesNameSearch(insurer, searchLower, categoryIdsFromSearch) {
+            if (!searchLower) return true; // no search
+            if (Array.isArray(categoryIdsFromSearch) && categoryIdsFromSearch.length) return true; // mimic PHP: do not apply title search when category search matched
+            return (insurer.name || '').toLowerCase().includes(searchLower);
+        }
+
+        function anyValueEquals(obj, value) {
+            for (const k in obj) { if (Object.prototype.hasOwnProperty.call(obj, k)) { if (obj[k] === value) return true; } }
+            return false;
+        }
+
+        function matchesDistribution(insurer, method, filterCategoryIds) {
+            if (!method || method === 'all') return true;
+            const dist = insurer.distribution_map || {};
+            const hasMeta = dist && Object.keys(dist).length > 0;
+            const catIds = (filterCategoryIds || []).map(id => parseInt(id, 10));
+
+            if (method === 'direct') {
+                // If meta not set/empty, treat as direct
+                if (!hasMeta) return true;
+            }
+
+            if (catIds.length) {
+                // Match any selected category
+                return catIds.some(cid => {
+                    const val = dist[String(cid)] || dist[cid];
+                    return method === 'direct' ? (val === 'direct') : (val === 'broker');
+                });
+            }
+
+            // No filter categories: match any value in the map
+            return anyValueEquals(dist, method) || (method === 'direct' && !hasMeta);
+        }
+
+        function filterCategoryIdsForDistribution(selectedCategoryId, pageCatId, categoryIdsFromSearch) {
+            if (selectedCategoryId) return [parseInt(selectedCategoryId, 10)];
+            if (pageCatId) return getChildTermIdsOf(pageCatId);
+            if (Array.isArray(categoryIdsFromSearch) && categoryIdsFromSearch.length) return categoryIdsFromSearch;
+            return [];
+        }
+
+        function sortInsurers(items, sortBy) {
+            if (sortBy === 'name_asc') {
+                return items.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+            }
+            if (sortBy === 'name_desc') {
+                return items.sort((a, b) => (b.name || '').localeCompare(a.name || ''));
+            }
+            // default random
+            for (let i = items.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [items[i], items[j]] = [items[j], items[i]];
+            }
+            return items;
+        }
+
+        function buildProductsOfferedText(item, pageCatId, selectedCategoryId) {
+            const names = [];
+            const ids = (item.category_ids || []).map(id => parseInt(id, 10));
+            const pageId = parseInt(pageCatId || 0, 10);
+            const selectedId = parseInt(selectedCategoryId || 0, 10);
+
+            if (pageId) {
+                const filtered = ids
+                    .filter(cid => {
+                        const c = categoriesById[cid];
+                        return c && parseInt(c.parent_id || 0, 10) === pageId;
+                    })
+                    .slice(0, 10);
+                filtered.forEach(cid => { const c = categoriesById[cid]; if (c) names.push(c.name); });
+                // If no child categories exist under this parent, show the parent as a leaf when assigned
+                if (!names.length && ids.includes(pageId) && !parentHasChildren(pageId)) {
+                    const parentCat = categoriesById[pageId];
+                    if (parentCat && parentCat.name) names.push(parentCat.name);
+                }
+            } else if (selectedId) {
+                if (ids.includes(selectedId)) {
+                    const c = categoriesById[selectedId];
+                    if (c) {
+                        if (parseInt(c.parent_id || 0, 10) !== 0) {
+                            names.push(c.name);
+                        } else if (!parentHasChildren(selectedId)) {
+                            // Selected category is a parent without children: treat as leaf
+                            names.push(c.name);
+                        }
+                    }
+                }
+            } else {
+                const filtered = ids
+                    .filter(cid => {
+                        const c = categoriesById[cid];
+                        return c && parseInt(c.parent_id || 0, 10) !== 0;
+                    })
+                    .slice(0, 10);
+                filtered.forEach(cid => { const c = categoriesById[cid]; if (c) names.push(c.name); });
+                // If there are no child categories at all, show parent categories that have no children (leaf parents)
+                if (!names.length) {
+                    const parentLeafs = ids
+                        .filter(cid => {
+                            const c = categoriesById[cid];
+                            return c && parseInt(c.parent_id || 0, 10) === 0 && !parentHasChildren(cid);
+                        })
+                        .slice(0, 10 - names.length);
+                    parentLeafs.forEach(cid => { const c = categoriesById[cid]; if (c) names.push(c.name); });
+                }
+            }
+
+            if (!names.length) return '';
+            return 'Products offered: ' + names.join(', ');
+        }
+
+        function buildCardHTML(item, pageCatId, selectedCategoryId) {
+            const placeholder = '/wp-content/uploads/2024/08/1c-submissions-bg.png';
+            const thumb = item.thumbnail || placeholder;
+            const website = item.website_url || '';
+            const phone = item.phone_number || '';
+            const products = buildProductsOfferedText(item, pageCatId, selectedCategoryId);
+            const productsHtml = products ? '<div class="insurer-products">' + products.replace(/&/g, '&amp;') + '</div>' : '<div class="insurer-products"></div>';
+            const websiteHtml = website ? '<div>Website: <a href="' + website + '" target="_blank">' + website + '</a></div>' : '';
+            const phoneHtml = phone ? '<div>Phone: <a href="tel:' + phone + '">' + phone + '</a></div>' : '';
+            return '' +
+                '<div class="insurer-card">' +
+                    '<div class="insurer-logo">' +
+                        '<img src="' + thumb + '" alt="'+ item.name +' Logo">' +
+                    '</div>' +
+                    '<div class="insurer-info">' +
+                        '<h4><a href="' + item.permalink + '">' + (item.name || '') + '</a></h4>' +
+                        '<div class="insurer-meta">' + websiteHtml + phoneHtml + '</div>' +
+                        productsHtml +
+                        '<a href="' + item.permalink + '" class="view-details">View full details</a>' +
+                    '</div>' +
+                '</div>';
+        }
+
+        let cachedFiltered = [];
+        let cachedParamsKey = '';
+
+        function buildParamsKey(search, category, sortBy, termId, distributionMethod) {
+            return [search || '', category || '', sortBy || '', termId || '', distributionMethod || ''].join('|');
+        }
+
+        function filterAndPrepare(reset) {
+            const search = ($formWrapper.find('input.search-insurer-input').val() || '').trim();
+            const termId = $formWrapper.find('input[name="term_id"]').val() || '';
+            const category = $formWrapper.find('input[name="insurer_category"]:checked').val() || '';
+            const sortBy = ($('.insurer-sort-bar input[name="sort_by"]:checked').val() || '');
+            const distributionMethod = $formWrapper.find('input[name="distribution_method"]:checked').val() || 'direct';
+
+            const key = buildParamsKey(search, category, sortBy, termId, distributionMethod);
+            if (reset) {
+                paged = 1;
+            }
+
+            if (reset || key !== cachedParamsKey) {
+                const searchLower = search.toLowerCase();
+                let categoryIdsFromSearch = getCategoryIdsFromSearch(searchLower);
+                // If page term is set, keep only children of page term
+                if (termId) {
+                    const pageId = parseInt(termId, 10);
+                    categoryIdsFromSearch = categoryIdsFromSearch.filter(cid => hasAncestor(cid, pageId) || parseInt((categoriesById[cid] || {}).parent_id || 0, 10) === pageId);
+                }
+
+                const filterCategoryIds = filterCategoryIdsForDistribution(category, termId, categoryIdsFromSearch);
+
+                // Filter
+                let filtered = insurersData.filter(item => {
+                    if (!matchesTaxConditions(item, termId, category, categoryIdsFromSearch)) return false;
+                    if (!matchesNameSearch(item, searchLower, categoryIdsFromSearch)) return false;
+                    if (!matchesDistribution(item, distributionMethod, filterCategoryIds)) return false;
+                    return true;
+                });
+
+                // Sort
+                filtered = sortInsurers(filtered, sortBy);
+
+                cachedFiltered = filtered;
+                cachedParamsKey = key;
+            }
+
+            return {
+                filtered: cachedFiltered,
+                search,
+                category,
+                sortBy,
+                termId,
+                distributionMethod
+            };
+        }
+
+        function fetchInsurers(reset = false) {
+            $formWrapper.addClass('loading');
+            if (reset) $resultsContainer.html('<div class="loading">Loading...</div>');
+            $loadMoreBtn.addClass('loading');
+
+            const { filtered, termId, category, search, sortBy, distributionMethod } = filterAndPrepare(reset);
+
+            const total = filtered.length;
+            const start = (paged - 1) * perPage;
+            const end = Math.min(start + perPage, total);
+            const items = filtered.slice(start, end);
+
+            // Render
+            const html = items.map(item => buildCardHTML(item, termId, category)).join('');
+            if (reset) {
+                $resultsContainer.html(html || '<div class="no-results">No insurers found.</div>');
+            } else {
+                $resultsContainer.append(html);
+            }
+
+            const hasMore = end < total;
+            if (hasMore) { $loadMoreBtn.show(); } else { $loadMoreBtn.hide(); }
+
+            // Update results count
+            if ($resultsCount.length) {
+                const shownCount = end;
+                $resultsCount.text('Showing ' + shownCount + ' of ' + total + ' results');
+            }
+
+            // Update URL (same behavior as before)
+            const params = new URLSearchParams(window.location.search);
+            if (search) {
+                params.set('search', search);
+                $('.key-search').text(search);
+            } else {
+                params.delete('search');
+                $('.key-search').text('');
+            }
+            if (category) { params.set('category', category); } else { params.delete('category'); }
+            if (sortBy) { params.set('sort', sortBy); } else { params.delete('sort'); }
+            if (distributionMethod && distributionMethod !== 'direct') { params.set('distribution_method', distributionMethod); } else { params.delete('distribution_method'); }
+            const newUrl = window.location.pathname + '?' + params.toString();
+            window.history.replaceState({}, '', newUrl);
+
+            $formWrapper.removeClass('loading');
+            $loadMoreBtn.removeClass('loading');
         }
         // On search input with debounce
         let searchTimer;
@@ -197,6 +452,9 @@
             paged++;
             fetchInsurers(false);
         });
+
+        // Initial render to replace server output
+        fetchInsurers(true);
     });
 
     // Toggle category dropdown for insurer instant search
@@ -444,7 +702,7 @@
             results = results.concat(matchedInsurers);
             
             // Limit results to 10 items
-            return results;
+            return results.slice(0, 10);
         }
 
         function setupSuggestionDropdown($form) {

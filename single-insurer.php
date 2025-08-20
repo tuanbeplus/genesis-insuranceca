@@ -12,6 +12,7 @@ $email = get_field('email', get_the_ID());
 $through_a_broker = get_field('through_a_broker', get_the_ID());
 $broker_url = get_field('broker_website_url', 'option');
 $broker_url = !empty($broker_url) ? $broker_url : 'https://www.needabroker.com.au/';
+$dist_method_meta = get_post_meta( get_the_ID(), 'insurer_distribution_method', true );
 ?>
 
 <main class="content">
@@ -60,32 +61,72 @@ $broker_url = !empty($broker_url) ? $broker_url : 'https://www.needabroker.com.a
             <?php endif; ?>
 
             <?php
+            // Get top-level categories
             $terms = wp_get_post_terms( get_the_ID(), 'insurer-category', array(
                 'hide_empty' => false,
                 'parent' => 0
             ) );
 
-            if (!empty($terms) && !is_wp_error($terms) || $through_a_broker == true) {
-                echo '<h3>Products offered</h3>';
+            // Prepare arrays to hold products by distribution method
+            $products_by_method = [
+                'direct' => [],
+                'broker' => [],
+            ];
 
-                if ($through_a_broker == true) {
-                    echo '<p>Products offered <a href="'. $broker_url .'" target="_blank">through a broker only</a></p>';
-                }
-
+            if (!empty($terms) && !is_wp_error($terms)) {
                 foreach ($terms as $term) {
+                    // Get child terms (product types) for this main category
                     $child_terms = wp_get_post_terms( get_the_ID(), 'insurer-category', array(
                         'hide_empty' => false,
                         'parent' => $term->term_id
                     ) );
-                    echo '<p><strong>' . esc_html($term->name) . '</strong>';
-                    if (!empty($child_terms) && !is_wp_error($child_terms)) {
-                        $child_names = array();
-                        foreach ($child_terms as $child) {
-                            $child_names[] = $child->name;
+
+                    // If no child terms, treat the parent as its own child
+                    if (empty($child_terms) || is_wp_error($child_terms)) {
+                        $method = isset($dist_method_meta[$term->term_id]) ? $dist_method_meta[$term->term_id] : 'direct';
+                        if (!isset($products_by_method[$method][$term->term_id])) {
+                            $products_by_method[$method][$term->term_id] = [
+                                'term_name' => $term->name,
+                                'children' => [],
+                            ];
                         }
-                        echo  ': ' . implode(', ', $child_names);
+                        $products_by_method[$method][$term->term_id]['children'][] = $term->name;
+                    } else {
+                        foreach ($child_terms as $child) {
+                            $method = isset($dist_method_meta[$child->term_id]) ? $dist_method_meta[$child->term_id] : 'direct';
+                            if (!isset($products_by_method[$method][$term->term_id])) {
+                                $products_by_method[$method][$term->term_id] = [
+                                    'term_name' => $term->name,
+                                    'children' => [],
+                                ];
+                            }
+                            $products_by_method[$method][$term->term_id]['children'][] = $child->name;
+                        }
                     }
-                    echo '</p>';
+                }
+
+                // Output for Direct
+                if (!empty($products_by_method['direct'])) {
+                    echo '<h3>Products offered direct</h3>';
+                    foreach ($products_by_method['direct'] as $main_cat) {
+                        echo '<p><strong>' . esc_html($main_cat['term_name']) . '</strong>';
+                        if (!empty($main_cat['children'])) {
+                            echo ': ' . esc_html(implode(', ', $main_cat['children']));
+                        }
+                        echo '</p>';
+                    }
+                }
+
+                // Output for Broker
+                if (!empty($products_by_method['broker'])) {
+                    echo '<h3>Products offered through a broker</h3>';
+                    foreach ($products_by_method['broker'] as $main_cat) {
+                        echo '<p><strong>' . esc_html($main_cat['term_name']) . '</strong>';
+                        if (!empty($main_cat['children'])) {
+                            echo ': ' . esc_html(implode(', ', $main_cat['children']));
+                        }
+                        echo '</p>';
+                    }
                 }
             }
             ?>

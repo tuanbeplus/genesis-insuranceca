@@ -638,11 +638,11 @@ form.search-form {
 .insurer-results {
     margin-top: 40px;
     .insurer-card {
-        margin-bottom: 42px;
+        margin-bottom: 52px;
         display: flex;
         gap: 36px;
         @media (max-width: 767px) {
-            margin-bottom: 30px;
+            margin-bottom: 32px;
             gap: 24px;
         }
         &:last-child {

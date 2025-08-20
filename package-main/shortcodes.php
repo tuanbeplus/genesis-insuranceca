@@ -285,7 +285,7 @@ function ica_get_insurer_query_results($params) {
     }
 
     if (!empty($meta_query)) {
-        // $args['meta_query'] = $meta_query;
+        $args['meta_query'] = $meta_query;
     }
 
     // Sorting
@@ -305,8 +305,6 @@ function ica_get_insurer_query_results($params) {
     if ($query->have_posts()) {
         while ($query->have_posts()) {
             $query->the_post();
-            $through_a_broker = get_field('through_a_broker', get_the_ID());
-            $broker_url = get_field('broker_website_url', 'option') ?: 'https://www.needabroker.com.au/';
             $distribution_map = get_post_meta(get_the_ID(), 'insurer_distribution_method', true);
             $distribution_map = is_array($distribution_map) ? $distribution_map : [];
             $website_url = get_field('websites')[0]['website_url'] ?? '';
@@ -323,9 +321,6 @@ function ica_get_insurer_query_results($params) {
                 <div class="insurer-info">
                     <h4><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></h4>
                     <div class="insurer-meta">
-                        <?php if ($through_a_broker): ?>
-                            <div>Products offered <a href="<?php echo esc_url($broker_url); ?>" target="_blank">through a broker only</a></div>
-                        <?php endif; ?>
                         <?php if ($website_url): ?>
                             <div>Website: <a href="<?php echo esc_url($website_url); ?>" target="_blank"><?php echo esc_html($website_url); ?></a></div>
                         <?php endif; ?>
@@ -341,14 +336,7 @@ function ica_get_insurer_query_results($params) {
                                 $child_categories = array_filter($post_categories, fn($cat) => $cat->parent == $page_cat_id);
                                 $filtered = [];
                                 foreach ($child_categories as $cat) {
-                                    $cat_id = $cat->term_id;
-                                    $method = $distribution_map[$cat_id] ?? 'direct';
-                                    $match = $distribution_method === 'all' || 
-                                            ($distribution_method === 'direct' && in_array($method, ['direct', ''])) ||
-                                            ($distribution_method === 'broker' && $method === 'broker');
-                                    if ($match) {
-                                        $filtered[] = $cat;
-                                    }
+                                    $filtered[] = $cat;
                                     if (count($filtered) >= 10) break;
                                 }
                                 if (!empty($filtered)) {
@@ -358,15 +346,9 @@ function ica_get_insurer_query_results($params) {
                             }
                         } elseif (!empty($category)) {
                             if (has_term($category, 'insurer-category', get_the_ID())) {
-                                $method = $distribution_map[$category] ?? 'direct';
-                                $match = $distribution_method === 'all' || 
-                                        ($distribution_method === 'direct' && in_array($method, ['direct', ''])) ||
-                                        ($distribution_method === 'broker' && $method === 'broker');
-                                if ($match) {
-                                    $term = get_term($category, 'insurer-category');
-                                    if ($term && !is_wp_error($term) && $term->parent != 0) {
-                                        echo 'Products offered: ' . esc_html($term->name);
-                                    }
+                                $term = get_term($category, 'insurer-category');
+                                if ($term && !is_wp_error($term) && $term->parent != 0) {
+                                    echo 'Products offered: ' . esc_html($term->name);
                                 }
                             }
                         } else {
@@ -375,14 +357,7 @@ function ica_get_insurer_query_results($params) {
                                 $child_categories = array_filter($post_categories, fn($cat) => $cat->parent != 0);
                                 $filtered = [];
                                 foreach ($child_categories as $cat) {
-                                    $cat_id = $cat->term_id;
-                                    $method = $distribution_map[$cat_id] ?? 'direct';
-                                    $match = $distribution_method === 'all' || 
-                                            ($distribution_method === 'direct' && in_array($method, ['direct', ''])) ||
-                                            ($distribution_method === 'broker' && $method === 'broker');
-                                    if ($match) {
-                                        $filtered[] = $cat;
-                                    }
+                                    $filtered[] = $cat;
                                     if (count($filtered) >= 10) break;
                                 }
                                 if (!empty($filtered)) {
@@ -477,6 +452,70 @@ function ica_render_insurers_instant_search($atts) {
     $landing = get_field('find_an_insurer_landing', 'option');
     $landing = !empty($landing) ? $landing : '/find-an-insurer/';
 
+    // Build JSON datasets for client-side search (categories and insurers)
+    // Categories JSON (same structure as global search)
+    $all_categories = get_terms([
+        'taxonomy' => 'insurer-category',
+        'hide_empty' => false,
+        'number' => 0,
+    ]);
+    $categories_json = [];
+    if (!empty($all_categories) && !is_wp_error($all_categories)) {
+        foreach ($all_categories as $cat) {
+            $categories_json[] = [
+                'type' => $cat->parent == 0 ? 'category' : 'child_category',
+                'id' => $cat->term_id,
+                'name' => $cat->name,
+                'permalink' => $cat->parent == 0 ? get_term_link($cat) : get_term_link(get_term($cat->parent)) . '?category=' . $cat->term_id,
+                'parent_id' => $cat->parent,
+                'parent_name' => $cat->parent ? get_term($cat->parent)->name : '',
+                'parent_link' => $cat->parent ? get_term_link(get_term($cat->parent)) : ''
+            ];
+        }
+    }
+
+    // Insurers JSON (enriched for client-side rendering and filtering)
+    $all_insurers = get_posts([
+        'post_type' => 'insurer',
+        'posts_per_page' => -1,
+        'post_status' => 'publish'
+    ]);
+    $insurers_json = [];
+    foreach ($all_insurers as $insurer) {
+        $thumbnail_url = get_the_post_thumbnail_url($insurer->ID, 'medium');
+        $websites = function_exists('get_field') ? get_field('websites', $insurer->ID) : [];
+        $website_url = '';
+        if (is_array($websites) && !empty($websites)) {
+            $first_website = reset($websites);
+            $website_url = is_array($first_website) && isset($first_website['website_url']) ? $first_website['website_url'] : '';
+        }
+        $phones = function_exists('get_field') ? get_field('phones', $insurer->ID) : [];
+        $phone_number = '';
+        if (is_array($phones) && !empty($phones)) {
+            $first_phone = reset($phones);
+            $phone_number = is_array($first_phone) && isset($first_phone['phone_number']) ? $first_phone['phone_number'] : '';
+        }
+        $terms = get_the_terms($insurer->ID, 'insurer-category');
+        $term_ids = [];
+        if ($terms && !is_wp_error($terms)) {
+            foreach ($terms as $t) { $term_ids[] = (int) $t->term_id; }
+        }
+        $distribution_map = get_post_meta($insurer->ID, 'insurer_distribution_method', true);
+        if (!is_array($distribution_map)) { $distribution_map = []; }
+
+        $insurers_json[] = [
+            'type' => 'insurer',
+            'id' => (int) $insurer->ID,
+            'name' => $insurer->post_title,
+            'permalink' => get_permalink($insurer->ID),
+            'thumbnail' => $thumbnail_url ? $thumbnail_url : '',
+            'website_url' => $website_url,
+            'phone_number' => $phone_number,
+            'category_ids' => $term_ids,
+            'distribution_map' => $distribution_map,
+        ];
+    }
+
     // Get values from URL
     $search_val = isset($_GET['search']) ? sanitize_text_field($_GET['search']) : '';
     $category_val = isset($_GET['category']) ? intval($_GET['category']) : 0;
@@ -485,6 +524,8 @@ function ica_render_insurers_instant_search($atts) {
     ob_start();
 ?>
     <form onsubmit="return false" method="POST" class="insurers-instant-search search-form">
+        <input type="hidden" id="search_category_json" value="<?php echo esc_attr(json_encode($categories_json)); ?>">
+        <input type="hidden" id="search_insurer_json" value="<?php echo esc_attr(json_encode($insurers_json)); ?>">
         <input type="hidden" name="term_id" value="<?php echo $atts['category'] ?? '' ?>">
         <h3><?php echo $heading ?></h3>
         <div class="input-container">
