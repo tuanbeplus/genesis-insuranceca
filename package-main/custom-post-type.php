@@ -358,6 +358,9 @@ function insuranceca_insurer_distribution_metabox($post) {
     echo '<style>
 	.insurer-distribution-metabox {
 		margin: 20px 10px 0;
+		max-height: 600px;
+    	overflow: auto;
+		border-bottom: 1px solid #eee;
 	}
 	.insurer-distribution-metabox table.widefat {
 		border-collapse: collapse;

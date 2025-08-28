@@ -136,6 +136,53 @@ genesis_markup(
 );
 
 
+// FAI confirmation popup: render only on insurer templates or selected pages (ACF option 'fai_confirmation_popup')
+$fai_popup = function_exists('get_field') ? (array) get_field('fai_confirmation_popup', 'option') : [];
+$fai_target_pages = isset($fai_popup['show_this_popup_at']) ? (array) $fai_popup['show_this_popup_at'] : [];
+$fai_heading = isset($fai_popup['heading']) && $fai_popup['heading'] ? $fai_popup['heading'] : 'Thank you for visiting Find an Insurer';
+$fai_items = isset($fai_popup['checklist_items']) && is_array($fai_popup['checklist_items']) ? $fai_popup['checklist_items'] : [];
+$fai_validation_message = isset($fai_popup['validation_message']) && $fai_popup['validation_message'] ? $fai_popup['validation_message'] : 'You must tick all fields before continuing';
+$is_insurer_context = ( function_exists('is_singular') && is_singular('insurer') )
+	|| ( function_exists('is_post_type_archive') && is_post_type_archive('insurer') )
+	|| ( function_exists('is_tax') && is_tax('insurer-category') );
+$is_target_page = function_exists('is_page') ? is_page($fai_target_pages) : false;
+$should_render_fai_popup = $is_insurer_context || $is_target_page;
+
+if ( $should_render_fai_popup ) : ?>
+	<div id="fai-confirmation-popup" aria-hidden="true" role="dialog">
+		<div class="fai-popup-backdrop"></div>
+		<div class="fai-popup-dialog" role="document" aria-modal="true">
+			<div class="fai-popup-header">
+				<div class="fai-popup-logo">
+					<a href="<?php echo esc_url(home_url('/')); ?>">
+						<img src="/wp-content/themes/genesis-insuranceca/package-main/assets/images/logo-green.svg" alt="Find an Insurer Logo">
+					</a>
+				</div>
+			</div>
+			<div class="fai-popup-body">
+				<h2><?php echo esc_html($fai_heading); ?></h2>
+				<?php if (!empty($fai_items)) : ?>
+					<?php foreach ($fai_items as $idx => $row) :
+						$text = isset($row['checkbox']) ? trim(wp_strip_all_tags($row['checkbox'])) : '';
+						if (!$text) { continue; }
+						$input_id = 'fai_chk_' . intval($idx);
+					?>
+					<label class="fai-check" for="<?php echo esc_attr($input_id); ?>">
+						<input type="checkbox" id="<?php echo esc_attr($input_id); ?>">
+						<span class="fai-box" aria-hidden="true"></span>
+						<span class="fai-label"><?php echo esc_html($text); ?></span>
+					</label>
+					<?php endforeach; ?>
+				<?php endif; ?>
+				<button type="button" id="fai_btn_continue" class="button button-primary" aria-disabled="true">Continue</button>
+				<p class="fai-required">* Required field</p>
+				<p class="fai-error" aria-live="polite" style="display:none;"><?php echo esc_html($fai_validation_message); ?></p>
+			</div>
+		</div>
+	</div>
+<?php endif; ?>
+
+<?php
 genesis_markup(
 	[
 		'open'    => '<div %s>',

@@ -635,12 +635,24 @@ form.search-form {
     }
 }
 
+@keyframes zoomIn {
+    0% {
+        transform: scale(0.4);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
 .insurer-results {
     margin-top: 40px;
     .insurer-card {
         margin-bottom: 52px;
         display: flex;
         gap: 36px;
+        animation: zoomIn 0.3s ease-in-out;
         @media (max-width: 767px) {
             margin-bottom: 32px;
             gap: 24px;
@@ -892,7 +904,12 @@ form.search-form {
         img.wp-post-image,
         img.placeholder-img {
             display: block;
-            width: 150px;
+            width: 180px;
+            height: 150px;
+            object-fit: contain;
+            padding: 10px 20px;
+            border: 1px solid #eee;
+    
         }
         h1 {
             font-size: 40px;
@@ -1031,3 +1048,90 @@ form.search-form {
     height: auto;
     font-weight: 500;
 }
+
+// FAI confirmation popup styles
+#fai-confirmation-popup {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: none;
+    &.active { display: block; }
+    .fai-popup-backdrop {
+        position: absolute;
+        inset: 0;
+        background: rgba(0,0,0,0.55);
+    }
+    .fai-popup-dialog {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        width: min(820px, 92vw);
+        background: #fff;
+        padding: 50px 60px;
+        box-shadow: 0 14px 40px rgba(0,0,0,0.2);
+        @media (max-width: 767px){
+            padding: 30px;
+        }
+    }
+    .fai-popup-header {
+        margin-bottom: 10px;
+        .fai-popup-logo img {
+            max-height: 110px;
+            width: auto;
+            margin-left: -10px;
+        }
+    }
+    .fai-popup-body {
+        h2 {
+            margin: 10px 0 26px;
+            font-size: 28px;
+            font-weight: 600;
+            color: #2f2f39;
+        }
+        .fai-check {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin: 18px 0;
+            cursor: pointer;
+            input { position: absolute; opacity: 0; }
+            .fai-box {
+                margin-top: 2px;
+                max-width: 20px;
+                height: 20px;
+                border: 2px solid #2f2f39;
+                display: flex;
+                position: relative;
+                width: 100%;
+            }
+            input:checked + .fai-box::after {
+                content: "";
+                position: absolute;
+                left: 4px;
+                top: 0;
+                width: 8px;
+                height: 13px;
+                border: solid #2f2f39;
+                border-width: 0 3px 3px 0;
+                transform: rotate(45deg);
+            }
+            .fai-label { color: #2f2f39; font-size: 16px; line-height: 1.5; }
+            &.fai-invalid .fai-box { border-color: #c0392b; }
+            &.fai-invalid .fai-label { color: #c0392b; }
+        }
+        #fai_btn_continue {
+            margin-top: 8px;
+            padding: 14px 34px;
+            background: #2a8164;
+            color: #fff;
+            border: 0;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: 0;
+        }
+        .fai-required { margin-top: 16px; font-size: 15px; color: #444; margin-bottom: 10px; }
+        .fai-error { margin-top: 6px; color: #c0392b; font-size: 15px; margin-bottom: 0;}
+    }
+}
+body.fai-popup-open { overflow: hidden; }

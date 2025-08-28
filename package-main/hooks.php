@@ -33,3 +33,18 @@ add_filter( 'excerpt_length', 'insuranceca_excerpt_length_text' , 20 );
 
 //Save post
 add_action('acf/save_post', 'acf_save_resources' , 5);
+
+
+add_action('admin_head', function() {
+  ?>
+  <style>
+    body .postbox .categorydiv div.tabs-panel {
+      max-height: 500px;
+    }
+    body .postbox .categorydiv div.tabs-panel ul li {
+      margin-bottom: 2px;
+      font-size: 14px;
+    }
+  </style>
+  <?php
+});

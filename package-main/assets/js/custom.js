@@ -82,6 +82,58 @@
 
     });
 
+    // FAI confirmation popup logic
+    jQuery(function($){
+        const $popup = $('#fai-confirmation-popup');
+        if (!$popup.length) return;
+
+        const STORAGE_KEY = 'fai_popup_acknowledged_v1';
+        const isAcknowledged = () => {
+            try { return localStorage.getItem(STORAGE_KEY) === '1'; } catch(e) { return false; }
+        };
+        const setAcknowledged = () => {
+            try { localStorage.setItem(STORAGE_KEY, '1'); } catch(e) {}
+        };
+
+        function openPopup() {
+            $popup.attr('aria-hidden', 'false').addClass('active');
+            $('body').addClass('fai-popup-open');
+        }
+        function closePopup() {
+            $popup.attr('aria-hidden', 'true').removeClass('active');
+            $('body').removeClass('fai-popup-open');
+        }
+
+        if (!isAcknowledged()) {
+            setTimeout(openPopup, 50);
+        }
+
+        $('#fai_btn_continue').on('click', function(){
+            const $checks = $('#fai-confirmation-popup .fai-check input[type="checkbox"]');
+            let allOk = true;
+            $checks.each(function(){
+                const ok = $(this).is(':checked');
+                $(this).closest('.fai-check').toggleClass('fai-invalid', !ok);
+                if (!ok) allOk = false;
+            });
+            if (allOk) {
+                setAcknowledged();
+                $('.fai-error').hide();
+                $('.fai-check').removeClass('fai-invalid');
+                closePopup();
+            } else {
+                $('.fai-error').show();
+            }
+        });
+
+        // Clear invalid state on change
+        $('#fai-confirmation-popup').on('change', '.fai-check input[type="checkbox"]', function(){
+            if ($(this).is(':checked')) {
+                $(this).closest('.fai-check').removeClass('fai-invalid');
+            }
+        });
+    });
+
     // Client-side logic for insurer instant search and load more (no AJAX)
     jQuery(function($){
         let paged = 1;
@@ -290,11 +342,15 @@
         function buildCardHTML(item, pageCatId, selectedCategoryId) {
             const placeholder = '/wp-content/uploads/2024/08/1c-submissions-bg.png';
             const thumb = item.thumbnail || placeholder;
-            const website = item.website_url || '';
+            let websiteName = item.website_url || '';
+            let website = item.website_url || '';
+            if (website && !/^https?:\/\//i.test(website)) {
+                website = 'https://' + website;
+            }
             const phone = item.phone_number || '';
             const products = buildProductsOfferedText(item, pageCatId, selectedCategoryId);
             const productsHtml = products ? '<div class="insurer-products">' + products.replace(/&/g, '&amp;') + '</div>' : '<div class="insurer-products"></div>';
-            const websiteHtml = website ? '<div>Website: <a href="' + website + '" target="_blank">' + website + '</a></div>' : '';
+            const websiteHtml = website ? '<div>Website: <a href="' + website + '" target="_blank">' + websiteName + '</a></div>' : '';
             const phoneHtml = phone ? '<div>Phone: <a href="tel:' + phone + '">' + phone + '</a></div>' : '';
             return '' +
                 '<div class="insurer-card">' +
@@ -406,7 +462,8 @@
             if (category) { params.set('category', category); } else { params.delete('category'); }
             if (sortBy) { params.set('sort', sortBy); } else { params.delete('sort'); }
             if (distributionMethod && distributionMethod !== 'direct') { params.set('distribution_method', distributionMethod); } else { params.delete('distribution_method'); }
-            const newUrl = window.location.pathname + '?' + params.toString();
+            const queryStr = params.toString();
+            const newUrl = window.location.pathname + (queryStr ? ('?' + queryStr) : '');
             window.history.replaceState({}, '', newUrl);
 
             $formWrapper.removeClass('loading');

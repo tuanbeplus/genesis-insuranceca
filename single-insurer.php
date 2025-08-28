@@ -8,7 +8,7 @@
 get_header(); 
 $websites = get_field('websites', get_the_ID());
 $phones = get_field('phones', get_the_ID());
-$email = get_field('email', get_the_ID());
+$emails = get_field('emails', get_the_ID());
 $through_a_broker = get_field('through_a_broker', get_the_ID());
 $broker_url = get_field('broker_website_url', 'option');
 $broker_url = !empty($broker_url) ? $broker_url : 'https://www.needabroker.com.au/';
@@ -33,7 +33,7 @@ $dist_method_meta = get_post_meta( get_the_ID(), 'insurer_distribution_method', 
                             <strong><?php echo esc_html($item['website_title']) ?>: </strong>
                         <?php endif; ?>
                         <?php if (!empty($item['website_url'])): ?>
-                            <a href="<?php echo esc_url($item['website_url']) ?>" target="_blank"><?php echo esc_url($item['website_url']) ?></a>
+                            <a href="<?php echo esc_url($item['website_url']) ?>" target="_blank"><?php echo esc_html($item['website_url']) ?></a>
                         <?php endif; ?>
                     </p>
                 <?php endforeach; ?>
@@ -53,11 +53,18 @@ $dist_method_meta = get_post_meta( get_the_ID(), 'insurer_distribution_method', 
                 <?php endforeach; ?>
             <?php endif; ?>
 
-            <?php if (!empty($email)): ?>
+            <?php if (!empty($emails)): ?>
                 <h3>Email</h3>
-                <p>
-                    <a href="mailto:<?php echo esc_attr($email) ?>"><?php echo esc_html($email) ?></a>
-                </p>
+                <?php foreach ($emails as $item): ?>
+                    <p>
+                        <?php if (!empty($item['email_title'])): ?>
+                            <strong><?php echo esc_html($item['email_title']) ?>: </strong>
+                        <?php endif; ?>
+                        <?php if (!empty($item['email_address'])): ?>
+                            <a href="mailto:<?php echo esc_attr($item['email_address']) ?>"><?php echo esc_html($item['email_address']) ?></a>
+                        <?php endif; ?>
+                    </p>
+                <?php endforeach; ?>
             <?php endif; ?>
 
             <?php
