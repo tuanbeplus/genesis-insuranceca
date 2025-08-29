@@ -194,9 +194,12 @@
 
         function getCategoryIdsFromSearch(searchLower) {
             if (!searchLower) return [];
-            return categoriesData
-                .filter(c => (c.name || '').toLowerCase().includes(searchLower))
-                .map(c => parseInt(c.id, 10));
+            const matches = categoriesData.filter(c => (c.name || '').toLowerCase().includes(searchLower));
+            if (!matches.length) return [];
+            // Prefer child category matches; fallback to all matches if none are children
+            const childMatches = matches.filter(c => parseInt(c.parent_id || 0, 10) !== 0);
+            const chosen = childMatches.length ? childMatches : matches;
+            return chosen.map(c => parseInt(c.id, 10));
         }
 
         function matchesTaxConditions(insurer, pageCatId, selectedCategoryId, categoryIdsFromSearch) {
@@ -380,25 +383,27 @@
             const sortBy = ($('.insurer-sort-bar input[name="sort_by"]:checked').val() || '');
             const distributionMethod = $formWrapper.find('input[name="distribution_method"]:checked').val() || 'direct';
 
-            const key = buildParamsKey(search, category, sortBy, termId, distributionMethod);
+            // Compute categoryIdsFromSearch and effectiveCategory up-front so they're available
+            // even when we return cached results (prevents undefined references)
+            const searchLower = search.toLowerCase();
+            let categoryIdsFromSearch = getCategoryIdsFromSearch(searchLower);
+            if (termId) {
+                const pageId = parseInt(termId, 10);
+                categoryIdsFromSearch = categoryIdsFromSearch.filter(cid => hasAncestor(cid, pageId) || parseInt((categoriesById[cid] || {}).parent_id || 0, 10) === pageId);
+            }
+            const effectiveCategory = category || (termId && categoryIdsFromSearch.length ? String(categoryIdsFromSearch[0]) : '');
+
+            const key = buildParamsKey(search, effectiveCategory, sortBy, termId, distributionMethod);
             if (reset) {
                 paged = 1;
             }
 
             if (reset || key !== cachedParamsKey) {
-                const searchLower = search.toLowerCase();
-                let categoryIdsFromSearch = getCategoryIdsFromSearch(searchLower);
-                // If page term is set, keep only children of page term
-                if (termId) {
-                    const pageId = parseInt(termId, 10);
-                    categoryIdsFromSearch = categoryIdsFromSearch.filter(cid => hasAncestor(cid, pageId) || parseInt((categoriesById[cid] || {}).parent_id || 0, 10) === pageId);
-                }
-
-                const filterCategoryIds = filterCategoryIdsForDistribution(category, termId, categoryIdsFromSearch);
+                const filterCategoryIds = filterCategoryIdsForDistribution(effectiveCategory, termId, categoryIdsFromSearch);
 
                 // Filter
                 let filtered = insurersData.filter(item => {
-                    if (!matchesTaxConditions(item, termId, category, categoryIdsFromSearch)) return false;
+                    if (!matchesTaxConditions(item, termId, effectiveCategory, categoryIdsFromSearch)) return false;
                     if (!matchesNameSearch(item, searchLower, categoryIdsFromSearch)) return false;
                     if (!matchesDistribution(item, distributionMethod, filterCategoryIds)) return false;
                     return true;
@@ -414,7 +419,7 @@
             return {
                 filtered: cachedFiltered,
                 search,
-                category,
+                category: effectiveCategory,
                 sortBy,
                 termId,
                 distributionMethod
