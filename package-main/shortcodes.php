@@ -603,7 +603,7 @@ function ica_render_insurers_instant_search($atts) {
         </div>
         <a id="btn-back" href="<?php echo esc_url($landing) ?>">
             <span class="icon"><i class="fa fa-angle-left"></i></span>
-            <span>Back to Find an insurer search</span>
+            <span>Back to Find an Insurer home page</span>
         </a>
     </form>
     <div class="insurer-sort-bar">

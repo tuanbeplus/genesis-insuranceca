@@ -517,11 +517,11 @@ form.search-form {
         font-size: 15px;
         color: #fff;
         text-decoration: underline;
-        text-underline-offset: 2px;
+        text-underline-offset: 3px;
         .icon {
             margin-right: 6px;
             position: relative;
-            bottom: -2px;
+            bottom: -3px;
             .fa::before {
                 font-size: 28px;
             }
@@ -556,7 +556,7 @@ form.search-form {
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 20px;
+            height: 16px;
             margin-left: 10px;
             transition: all 0.2s;
             .fa::before {
