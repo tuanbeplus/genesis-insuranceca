@@ -466,7 +466,7 @@
             }
             if (category) { params.set('category', category); } else { params.delete('category'); }
             if (sortBy) { params.set('sort', sortBy); } else { params.delete('sort'); }
-            if (distributionMethod && distributionMethod !== 'direct') { params.set('distribution_method', distributionMethod); } else { params.delete('distribution_method'); }
+            if (distributionMethod && distributionMethod !== 'direct') { params.set('dm', distributionMethod); } else { params.delete('dm'); }
             const queryStr = params.toString();
             const newUrl = window.location.pathname + (queryStr ? ('?' + queryStr) : '');
             window.history.replaceState({}, '', newUrl);
@@ -768,68 +768,110 @@
         }
 
         function setupSuggestionDropdown($form) {
-            let $input = $form.find('.search-insurer-input');
             let $dropdown = $form.find('.insurer-suggestion-dropdown');
+            let $toggleBtn = $form.find('.btn-toggle-sugg-dropdown');
             let termId = $form.find('input[name="term_id"]').val() || '';
-            
+
             // Get JSON data from hidden inputs
             let categoriesData = [];
             let insurersData = [];
-            
             try {
                 const categoryJson = $form.find('#search_category_json').val();
                 const insurerJson = $form.find('#search_insurer_json').val();
-                
-                if (categoryJson) {
-                    categoriesData = JSON.parse(categoryJson);
-                }
-                if (insurerJson) {
-                    insurersData = JSON.parse(insurerJson);
-                }
+                if (categoryJson) { categoriesData = JSON.parse(categoryJson); }
+                if (insurerJson) { insurersData = JSON.parse(insurerJson); }
             } catch (e) {
                 console.error('Failed to parse JSON data:', e);
             }
 
-            // Store default HTML for reset
-            $dropdown.data('default-html', $dropdown.html());
+            function renderAllSuggestions() {
+                let html = '';
+                html += '<div class="suggestion-columns">';
 
-            // Search suggestions on input
-            let typingTimer;
-            $input.on('input', function(){
-                let val = $(this).val();
-                
-                // Clear any existing timer
-                clearTimeout(typingTimer);
-                
-                if (val.trim() === '') {
-                    $dropdown.html($dropdown.data('default-html'));
-                    $dropdown.slideDown(120);
-                    return;
-                }
+                // Categories column (parents with children)
+                const parents = categoriesData.filter(c => parseInt(c.parent_id || 0, 10) === 0);
+                const childrenByParent = {};
+                categoriesData.forEach(c => {
+                    const pid = parseInt(c.parent_id || 0, 10);
+                    if (pid !== 0) {
+                        if (!childrenByParent[pid]) childrenByParent[pid] = [];
+                        childrenByParent[pid].push(c);
+                    }
+                });
 
-                // Only search if 2 or more characters
-                if (val.trim().length < 2) {
+                html += '<div class="suggestion-col suggestion-col-cat">';
+                html += '<div class="suggestion-col-title">Categories</div>';
+                html += '<ul class="suggestion-list">';
+                parents.forEach(parent => {
+                    const kids = childrenByParent[parent.id] || [];
+                    html += '<li class="suggestion-parent'+(kids.length ? '' : ' no-children')+'">';
+                    html +=   '<div class="suggestion-header">'
+                          +     '<a href="'+parent.permalink+'" class="parent-link">'+parent.name+'</a>'
+                          +     (kids.length ? '<span class="toggle-icon" aria-label="Toggle"><i class="fa fa-angle-down"></i></span>' : '')
+                          +   '</div>';
+                    if (kids.length) {
+                        html += '<ul class="child-suggestions" style="display: none;">';
+                        kids.forEach(child => {
+                            html += '<li class="suggestion-item child-suggestion" data-url="'+child.permalink+'">'
+                                + '<a href="'+child.permalink+'">'+child.name+'</a>'
+                                + '</li>';
+                        });
+                        html += '</ul>';
+                    }
+                    html += '</li>';
+                });
+                html += '</ul>';
+                html += '</div>';
+
+                // Insurers column
+                html += '<div class="suggestion-col suggestion-col-insurer">';
+                html += '<div class="suggestion-col-title">Insurers</div>';
+                html += '<ul class="suggestion-list">';
+                insurersData.forEach(item => {
+                    html += '<li class="suggestion-item" data-url="'+item.permalink+'">'
+                        + '<span class="suggestion-icon suggestion-insurer"><i class="fa fa-shield"></i></span>'
+                        + '<a href="'+item.permalink+'">'+item.name+'</a>'
+                        + '</li>';
+                });
+                html += '</ul>';
+                html += '</div>';
+
+                html += '</div>';
+                $dropdown.html(html);
+            }
+
+            // Toggle dropdown on button
+            $toggleBtn.on('click', function(e){
+                e.preventDefault();
+                e.stopPropagation();
+                if ($dropdown.is(':visible')) {
                     $dropdown.slideUp(120);
-                    return;
-                }
-
-                // Wait for user to finish typing (100ms)
-                typingTimer = setTimeout(function() {
-                    // Search local data instead of AJAX
-                    const suggestions = searchLocalData(val, categoriesData, insurersData, termId);
-
-                    renderSuggestions(suggestions, $dropdown);
+                    $toggleBtn.removeClass('active');
+                } else {
+                    renderAllSuggestions();
                     $dropdown.slideDown(120);
-                }, 100);
+                    $toggleBtn.addClass('active');
+                }
             });
 
-            // Hide dropdown when clicking outside the input or dropdown
+            // Hide dropdown when clicking outside
             $(document).on('mousedown.ica-suggestion', function(e){
-                if (
-                    !$input.is(e.target) && $input.has(e.target).length === 0 &&
-                    !$dropdown.is(e.target) && $dropdown.has(e.target).length === 0
-                ) {
+                if (!$dropdown.is(e.target) && $dropdown.has(e.target).length === 0 && !$toggleBtn.is(e.target) && $toggleBtn.has(e.target).length === 0) {
                     $dropdown.slideUp(120);
+                    $toggleBtn.removeClass('active');
+                }
+            });
+
+            // Toggle child list for each parent row
+            $dropdown.on('click', '.suggestion-parent .suggestion-header', function(e){
+                // Allow direct clicks on the parent link to navigate
+                if ($(e.target).closest('a.parent-link').length) return;
+                e.preventDefault();
+                const $parent = $(this).closest('.suggestion-parent');
+                const $children = $parent.find('> .child-suggestions');
+                if ($children.length) {
+                    $children.slideToggle(120);
+                    $parent.toggleClass('active');
                 }
             });
 
@@ -840,7 +882,7 @@
             });
         }
 
-        // Only apply suggestion dropdown to global search form
+        // Apply new toggle-based suggestions to global search form only
         setupSuggestionDropdown($('form.insurers-global-search'));
         // Do NOT apply to instant search
     });

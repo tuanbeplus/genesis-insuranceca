@@ -56,16 +56,15 @@ function ica_render_insurers_global_search($atts) {
 
 	ob_start();
 ?>
-	<form action="/insurer/" method="GET" class="insurers-global-search search-form">
+	<form onsubmit="return false" method="GET" class="insurers-global-search search-form">
         <input type="hidden" id="search_category_json" value="<?php echo esc_attr(json_encode($categories_json)) ?>">
         <input type="hidden" id="search_insurer_json" value="<?php echo esc_attr(json_encode($insurers_json)) ?>">
 		<h3><?php echo $heading ?></h3>
 		<div class="input-container">
-			<input class="search-insurer-input" 
-				type="text" name="search" value="" 
-				placeholder="<?php echo $placeholder ?>" 
-				autocomplete="off" spellcheck="false" dir="auto">
-			<button class="btn-search-insurer" type="submit" title="Search"><i class="fa fa-search"></i></button>
+			<button class="btn-toggle-sugg-dropdown">
+                <span>Select category, product type or insurer</span>
+                <span class="icon"><i class="fa fa-angle-down"></i></span>
+            </button>
 			<?php
 			// Fetch parent categories for initial dropdown
 			$parent_cats = get_terms([
@@ -76,16 +75,7 @@ function ica_render_insurers_global_search($atts) {
 			]);
 			?>
 			<ul class="insurer-suggestion-dropdown" style="display:none;">
-				<?php if (!empty($parent_cats) && !is_wp_error($parent_cats)): ?>
-					<?php foreach ($parent_cats as $cat): ?>
-						<li class="suggestion-item" data-url="<?php echo esc_url(get_term_link($cat)); ?>">
-							<span class="suggestion-icon suggestion-category"><i class="fa fa-folder"></i></span>
-							<a href="<?php echo esc_url(get_term_link($cat)); ?>"><?php echo esc_html($cat->name); ?></a>
-						</li>
-					<?php endforeach; ?>
-				<?php else: ?>
-					<li class="no-suggestion">No suggestions found</li>
-				<?php endif; ?>
+				<!-- Content is rendered by JS on toggle to include both categories and insurers -->
 			</ul>
 		</div>
 		<?php if (!empty($suggest_product_types)): ?>
@@ -520,6 +510,8 @@ function ica_render_insurers_instant_search($atts) {
     $search_val = isset($_GET['search']) ? sanitize_text_field($_GET['search']) : '';
     $category_val = isset($_GET['category']) ? intval($_GET['category']) : 0;
     $sort_val = isset($_GET['sort']) ? sanitize_text_field($_GET['sort']) : '';
+    // Accept `dm` as distribution method short param
+    $dm_val = isset($_GET['dm']) ? sanitize_text_field($_GET['dm']) : (isset($_GET['distribution_method']) ? sanitize_text_field($_GET['distribution_method']) : 'direct');
 
     ob_start();
 ?>
@@ -584,7 +576,7 @@ function ica_render_insurers_instant_search($atts) {
                     'broker' => 'Through a Broker',
                     'all' => 'All'
                 ];
-                $selected_method = isset($_GET['distribution_method']) ? sanitize_text_field($_GET['distribution_method']) : 'direct';
+                $selected_method = isset($_GET['dm']) ? sanitize_text_field($_GET['dm']) : (isset($_GET['distribution_method']) ? sanitize_text_field($_GET['distribution_method']) : 'direct');
                 foreach ($distribution_methods as $value => $label):
                     $input_id = 'distribution_method_' . $value;
                 ?>
@@ -636,7 +628,7 @@ function ica_render_insurers_instant_search($atts) {
         'paged' => 1,
         'per_page' => 10,
         'page_cat_id' => !empty($atts['category']) ? intval($atts['category']) : 0,
-        'distribution_method' => isset($_GET['distribution_method']) ? sanitize_text_field($_GET['distribution_method']) : 'direct',
+        'distribution_method' => $dm_val,
     ];
     $results = ica_get_insurer_query_results($params);
     ?>
