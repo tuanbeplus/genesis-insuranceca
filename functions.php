@@ -227,14 +227,25 @@ add_action( 'send_headers', 'additional_information_into_headers' );
 // change content for PDF RESOURCE 
 function bt_default_pdf_resource_content($content) {
 	global $post;
-	$select_type_resources = get_field('select_type_resources', $post->ID);
-	$upload_file = get_field('upload_file', $post->ID);
-	if ($post->post_type == 'resources' && $upload_file && is_singular('resources') && $select_type_resources == 'PDF') {
+	// Ensure $post is set and is an object
+	if ( ! isset( $post ) || ! is_object( $post ) ) {
+		return $content;
+	}
+	$post_id = isset( $post->ID ) ? $post->ID : 0;
+	$post_type = isset( $post->post_type ) ? $post->post_type : '';
+
+	if ( ! $post_id || $post_type !== 'resources' ) {
+		return $content;
+	}
+	$select_type_resources = get_field('select_type_resources', $post_id);
+	$upload_file = get_field('upload_file', $post_id);
+
+	if ( $upload_file && is_singular('resources') && $select_type_resources == 'PDF' ) {
 		ob_start(); ?>
 		<div class="container">
 			<div class="resources_document" style="padding: 20px 0 40px;">
 				<h3>Document:</h3>
-				<a target="_blank" style="display: flex;color: #2f2f39;align-items: center;" href="<?php echo $upload_file['url']; ?>"><img src="/wp-content/plugins/elementor-addons/assets/images/Bitmap-pdf.svg" alt="icon" style="margin-right: 10px;"><?php echo $upload_file['name']; ?></a>
+				<a target="_blank" style="display: flex;color: #2f2f39;align-items: center;" href="<?php echo esc_url($upload_file['url']); ?>"><img src="/wp-content/plugins/elementor-addons/assets/images/Bitmap-pdf.svg" alt="icon" style="margin-right: 10px;"><?php echo esc_html($upload_file['name']); ?></a>
 			</div>
 		</div>
 		<?php

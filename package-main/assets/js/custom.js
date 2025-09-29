@@ -763,8 +763,7 @@
             
             results = results.concat(matchedInsurers);
             
-            // Limit results to 10 items
-            return results.slice(0, 10);
+            return results;
         }
 
         function setupSuggestionDropdown($form) {

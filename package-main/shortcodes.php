@@ -72,7 +72,7 @@ function ica_render_insurers_global_search($atts) {
 				'taxonomy' => 'insurer-category',
 				'hide_empty' => false,
 				'parent' => 0,
-				'number' => 12,
+				'number' => 0, // Get all
 			]);
 			?>
 			<ul class="insurer-suggestion-dropdown" style="display:none;">

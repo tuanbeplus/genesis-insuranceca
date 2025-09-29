@@ -4,8 +4,8 @@
  */
 define( 'PJ_DIR', get_stylesheet_directory() . '/package-main/' );
 define( 'PJ_URI', get_stylesheet_directory_uri() . '/package-main/' );
-define( 'PJ_VERSION', time() );
-define( 'PJ_DEV_MODE', true ); // enable to compiler scssphp
+define( 'PJ_VERSION', '2.1' );
+define( 'PJ_DEV_MODE', false ); // enable to compiler scssphp
 
 /**
  * Includes
