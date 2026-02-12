@@ -298,3 +298,12 @@ function ica_insurer_breadcrumbs() {
     echo '</div>';
 }
 
+
+add_filter('monsterinsights_frontend_tracking_analytics_before_pageview', function($tracking) {
+    if (is_singular('insurer')) {
+        $tracking .= "gtag('event', 'page_view', { post_type: 'insurer' });";
+    } elseif (is_tax('insurer-category')) {
+        $tracking .= "gtag('event', 'page_view', { taxonomy: 'insurer-category' });";
+    }
+    return $tracking;
+});

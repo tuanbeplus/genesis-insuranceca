@@ -30,9 +30,13 @@ function ica_render_insurers_global_search($atts) {
 				'type' => $cat->parent == 0 ? 'category' : 'child_category',
 				'id' => $cat->term_id,
 				'name' => $cat->name,
-				'permalink' => $cat->parent == 0 ? get_term_link($cat) : get_term_link(get_term($cat->parent)) . '?category=' . $cat->term_id,
+				'permalink' => ($cat->parent == 0)
+					? (!is_wp_error(get_term_link($cat)) ? get_term_link($cat) : '')
+					: ((!is_wp_error(get_term($cat->parent)) && !is_wp_error(get_term_link(get_term($cat->parent))))
+						? get_term_link(get_term($cat->parent)) . '?category=' . $cat->term_id
+						: ''),
 				'parent_id' => $cat->parent,
-				'parent_name' => $cat->parent ? get_term($cat->parent)->name : '',
+				'parent_name' => ($cat->parent && ($p = get_term($cat->parent, 'insurer-category')) && !is_wp_error($p)) ? $p->name : '',
 				'parent_link' => $cat->parent ? get_term_link(get_term($cat->parent)) : ''
 			];
 		}
@@ -466,9 +470,13 @@ function ica_render_insurers_instant_search($atts) {
                 'type' => $cat->parent == 0 ? 'category' : 'child_category',
                 'id' => $cat->term_id,
                 'name' => $cat->name,
-                'permalink' => $cat->parent == 0 ? get_term_link($cat) : get_term_link(get_term($cat->parent)) . '?category=' . $cat->term_id,
+                'permalink' => ($cat->parent == 0)
+					? (!is_wp_error(get_term_link($cat)) ? get_term_link($cat) : '')
+					: ((!is_wp_error(get_term($cat->parent)) && !is_wp_error(get_term_link(get_term($cat->parent))))
+						? get_term_link(get_term($cat->parent)) . '?category=' . $cat->term_id
+						: ''),
                 'parent_id' => $cat->parent,
-                'parent_name' => $cat->parent ? get_term($cat->parent)->name : '',
+                'parent_name' => ($cat->parent && ($parent_term = get_term($cat->parent)) && !is_wp_error($parent_term)) ? $parent_term->name : '',
                 'parent_link' => $cat->parent ? get_term_link(get_term($cat->parent)) : ''
             ];
         }
