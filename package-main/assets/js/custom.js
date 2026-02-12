@@ -646,7 +646,7 @@
 
                 // Show categories with their children if any
                 categories.forEach(function (category) {
-                    html += '<li class="suggestion-item" data-url="' + category.permalink + '">'
+                    html += '<li class="suggestion-item">'
                         + '<span class="suggestion-icon suggestion-category"><i class="fa fa-folder"></i></span>'
                         + '<a href="' + category.permalink + '">' + category.name + '</a>';
 
@@ -669,13 +669,13 @@
                     if (!categories.find(cat => cat.id === parseInt(parentId))) {
                         // Use parent info from first child
                         const firstChild = children[0];
-                        html += '<li class="suggestion-item parent-category" data-url="' + firstChild.parent_link + '">'
+                        html += '<li class="suggestion-item parent-category">'
                             + '<span class="suggestion-icon suggestion-category"><i class="fa fa-folder"></i></span>'
                             + '<a href="' + firstChild.parent_link + '">' + firstChild.parent_name + '</a>'
                             + '<ul class="child-suggestions">';
 
                         children.forEach(function (child) {
-                            html += '<li class="suggestion-item child-suggestion" data-url="' + child.permalink + '">'
+                            html += '<li class="suggestion-item child-suggestion">'
                                 + '<a href="' + child.permalink + '">' + child.name + '</a>'
                                 + '</li>';
                         });
@@ -694,7 +694,7 @@
                 html += '<div class="suggestion-col-title">Insurers</div>';
                 html += '<ul class="suggestion-list">';
                 insurers.forEach(function (item) {
-                    html += '<li class="suggestion-item" data-url="' + item.permalink + '">'
+                    html += '<li class="suggestion-item">'
                         + '<span class="suggestion-icon suggestion-insurer"><i class="fa fa-shield"></i></span>'
                         + '<a href="' + item.permalink + '">' + item.name + '</a>'
                         + '</li>';
@@ -829,16 +829,6 @@
                     !$dropdown.is(e.target) && $dropdown.has(e.target).length === 0
                 ) {
                     $dropdown.slideUp(120);
-                }
-            });
-
-            // Click on suggestion
-            $dropdown.on('mousedown', '.suggestion-item', function (e) {
-                e.preventDefault();
-                e.stopPropagation();
-                const url = $(this).data('url');
-                if (url && url !== 'undefined') {
-                    window.location.href = url;
                 }
             });
         }
