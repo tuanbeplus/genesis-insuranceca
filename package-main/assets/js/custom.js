@@ -1,29 +1,29 @@
-;( function( w, $ ) {
+; (function (w, $) {
     'use strict';
 
-    function showPopupSharePage(){
+    function showPopupSharePage() {
         let ctaPopup = $('#insuranceca-share-page > .cta-share');
         let popup = $('#insuranceca-share-page > .content-share-page');
-        ctaPopup.click(function(event){
-            popup.show( "slow" );
+        ctaPopup.click(function (event) {
+            popup.show("slow");
             $('#insuranceca-share-page').addClass('active');
         });
     }
 
-    function hiddenPopupSharePage(){
+    function hiddenPopupSharePage() {
         let ctaClose = $('#insuranceca-share-page > .content-share-page .cta-close');
         let popup = $('#insuranceca-share-page > .content-share-page');
-        ctaClose.click(function(event){
-            popup.hide( "slow" );
+        ctaClose.click(function (event) {
+            popup.hide("slow");
             $('#insuranceca-share-page').removeClass('active');
         });
     }
 
-    function copyLinkPageCurrent(){
+    function copyLinkPageCurrent() {
 
         let ctaCopy = $('#insuranceca-share-page > .content-share-page .cta-copy');
 
-        ctaCopy.click(function(){
+        ctaCopy.click(function () {
 
             let linkCurrent = document.getElementById("link-page-current");
             linkCurrent.innerHTML = "Copy to clipboard";
@@ -39,7 +39,7 @@
     function hiddenAlertBannerTop() {
         let ctaHidden = $('#bt-alert-banner-top .cta-close');
         let isBanner = $('#bt-alert-banner-top')
-        ctaHidden.click(function(event){
+        ctaHidden.click(function (event) {
             isBanner.slideUp(400);
         });
 
@@ -47,7 +47,7 @@
 
     function btnScroll() {
 
-        $(".elementor-widget-button a").on('click', function(event) {
+        $(".elementor-widget-button a").on('click', function (event) {
 
             if (this.hash !== "") {
 
@@ -57,7 +57,7 @@
 
                 $('html, body').animate({
                     scrollTop: $(hash).offset().top
-                }, 800, function(){
+                }, 800, function () {
 
                     window.location.hash = hash;
                 });
@@ -67,13 +67,13 @@
     }
 
     function toggleMenuMobile() {
-    $('.site-header .wp-megamenu .menu-item a').click( function() {
-      $(this).find('b').toggleClass('rotate');
-    });
-  }
+        $('.site-header .wp-megamenu .menu-item a').click(function () {
+            $(this).find('b').toggleClass('rotate');
+        });
+    }
 
-    $( document ).ready(function() {
-      toggleMenuMobile();
+    $(document).ready(function () {
+        toggleMenuMobile();
         showPopupSharePage();
         hiddenPopupSharePage();
         copyLinkPageCurrent();
@@ -83,16 +83,16 @@
     });
 
     // FAI confirmation popup logic
-    jQuery(function($){
+    jQuery(function ($) {
         const $popup = $('#fai-confirmation-popup');
         if (!$popup.length) return;
 
         const STORAGE_KEY = 'fai_popup_acknowledged_v1';
         const isAcknowledged = () => {
-            try { return localStorage.getItem(STORAGE_KEY) === '1'; } catch(e) { return false; }
+            try { return localStorage.getItem(STORAGE_KEY) === '1'; } catch (e) { return false; }
         };
         const setAcknowledged = () => {
-            try { localStorage.setItem(STORAGE_KEY, '1'); } catch(e) {}
+            try { localStorage.setItem(STORAGE_KEY, '1'); } catch (e) { }
         };
 
         function openPopup() {
@@ -108,10 +108,10 @@
             setTimeout(openPopup, 50);
         }
 
-        $('#fai_btn_continue').on('click', function(){
+        $('#fai_btn_continue').on('click', function () {
             const $checks = $('#fai-confirmation-popup .fai-check input[type="checkbox"]');
             let allOk = true;
-            $checks.each(function(){
+            $checks.each(function () {
                 const ok = $(this).is(':checked');
                 $(this).closest('.fai-check').toggleClass('fai-invalid', !ok);
                 if (!ok) allOk = false;
@@ -127,7 +127,7 @@
         });
 
         // Clear invalid state on change
-        $('#fai-confirmation-popup').on('change', '.fai-check input[type="checkbox"]', function(){
+        $('#fai-confirmation-popup').on('change', '.fai-check input[type="checkbox"]', function () {
             if ($(this).is(':checked')) {
                 $(this).closest('.fai-check').removeClass('fai-invalid');
             }
@@ -135,7 +135,7 @@
     });
 
     // Client-side logic for insurer instant search and load more (no AJAX)
-    jQuery(function($){
+    jQuery(function ($) {
         let paged = 1;
         const perPage = 10;
 
@@ -357,15 +357,15 @@
             const phoneHtml = phone ? '<div>Phone: <a href="tel:' + phone + '">' + phone + '</a></div>' : '';
             return '' +
                 '<div class="insurer-card">' +
-                    '<div class="insurer-logo">' +
-                        '<img src="' + thumb + '" alt="'+ item.name +' Logo">' +
-                    '</div>' +
-                    '<div class="insurer-info">' +
-                        '<h4><a href="' + item.permalink + '">' + (item.name || '') + '</a></h4>' +
-                        '<div class="insurer-meta">' + websiteHtml + phoneHtml + '</div>' +
-                        productsHtml +
-                        '<a href="' + item.permalink + '" class="view-details">View full details</a>' +
-                    '</div>' +
+                '<div class="insurer-logo">' +
+                '<img src="' + thumb + '" alt="' + item.name + ' Logo">' +
+                '</div>' +
+                '<div class="insurer-info">' +
+                '<h4><a href="' + item.permalink + '">' + (item.name || '') + '</a></h4>' +
+                '<div class="insurer-meta">' + websiteHtml + phoneHtml + '</div>' +
+                productsHtml +
+                '<a href="' + item.permalink + '" class="view-details">View full details</a>' +
+                '</div>' +
                 '</div>';
         }
 
@@ -476,7 +476,7 @@
         }
         // On search input with debounce
         let searchTimer;
-        $(document).on('input', '.search-insurer-input', function(){
+        $(document).on('input', '.search-insurer-input', function () {
             clearTimeout(searchTimer);
             paged = 1;
             searchTimer = setTimeout(() => {
@@ -484,7 +484,7 @@
             }, 500); // 0.5s delay
         });
         // On category change
-        $(document).on('change', '.insurers-instant-search input[name="insurer_category"]', function(){
+        $(document).on('change', '.insurers-instant-search input[name="insurer_category"]', function () {
             paged = 1;
             fetchInsurers(true);
             $('#btn-toggle-categories .selected-category').text($(this).data('label'));
@@ -494,23 +494,23 @@
             $('#btn-toggle-categories').trigger('click');
         });
         // On form submit
-        $(document).on('submit', 'form.insurers-instant-search', function(e){
+        $(document).on('submit', 'form.insurers-instant-search', function (e) {
             e.preventDefault();
             paged = 1;
             fetchInsurers(true);
         });
         // On sort change
-        $(document).on('change', 'input[name="sort_by"]', function(){
+        $(document).on('change', 'input[name="sort_by"]', function () {
             paged = 1;
             fetchInsurers(true);
         });
         // On distribution method change
-        $(document).on('change', 'input[name="distribution_method"]', function(){
+        $(document).on('change', 'input[name="distribution_method"]', function () {
             paged = 1;
             fetchInsurers(true);
         });
         // Load more
-        $(document).on('click', '.load-more-insurers', function(){
+        $(document).on('click', '.load-more-insurers', function () {
             paged++;
             fetchInsurers(false);
         });
@@ -520,7 +520,7 @@
     });
 
     // Toggle category dropdown for insurer instant search
-    $(document).on('click', '#btn-toggle-categories', function(e){
+    $(document).on('click', '#btn-toggle-categories', function (e) {
         e.preventDefault();
         e.stopPropagation();
         let catDropdown = $('#categories-dropdown');
@@ -536,7 +536,7 @@
     });
 
     // Toggle insurer sort dropdown
-    $(document).on('click', '#btn-toggle-sort', function(e){
+    $(document).on('click', '#btn-toggle-sort', function (e) {
         e.preventDefault();
         e.stopPropagation();
         let sortDropdown = $('#insurer-sort-dropdown');
@@ -552,7 +552,7 @@
     });
 
     // Close dropdowns when clicking outside
-    $(document).on('click', function(e) {
+    $(document).on('click', function (e) {
         if (!$(e.target).closest('#btn-toggle-categories, #categories-dropdown').length) {
             $('#categories-dropdown').removeClass('active');
             $('#btn-toggle-categories').removeClass('active');
@@ -564,24 +564,24 @@
     });
 
     // Remove category filter and reset search
-    $(document).on('click', '#btn-remove-category', function(e){
+    $(document).on('click', '#btn-remove-category', function (e) {
         e.preventDefault();
         e.stopPropagation();
-        
+
         // Reset UI elements
         $('.selected-category').html('Filter by a subcategory');
         $('input[name="insurer_category"]').prop('checked', false);
-        
+
         // Close dropdowns
         $('#categories-dropdown').removeClass('active');
         $('#btn-toggle-categories').removeClass('active');
-        
+
         // Trigger new search without category
         $('form.insurers-instant-search').trigger('submit');
     });
 
     // Toggle subcategory list under each parent category
-    $(document).on('click', '.btn-toggle-options', function(e){
+    $(document).on('click', '.btn-toggle-options', function (e) {
         e.preventDefault();
         e.stopPropagation();
         let $group = $(this).closest('.category-group');
@@ -591,12 +591,12 @@
     });
 
     // Prevent clicks on dropdown from closing it
-    $(document).on('click', '#insurer-sort-dropdown, #categories-dropdown, #btn-remove-category, .btn-toggle-category a', function(e){
+    $(document).on('click', '#insurer-sort-dropdown, #categories-dropdown, #btn-remove-category, .btn-toggle-category a', function (e) {
         e.stopPropagation();
     });
 
     // Toggle child categories in insurer_categories_list shortcode
-    jQuery(document).on('click', '.insurers-categories-list .btn-toggle-category', function(e){
+    jQuery(document).on('click', '.insurers-categories-list .btn-toggle-category', function (e) {
         e.preventDefault();
         var $group = jQuery(this).closest('.category-group');
         var $children = $group.find('.category-children');
@@ -611,7 +611,7 @@
     });
 
     // Suggestion dropdown for insurer search (global and instant)
-    jQuery(function($){
+    jQuery(function ($) {
         function renderSuggestions(suggestions, $dropdown) {
             // Split suggestions into categories and insurers
             const categories = suggestions.filter(item => item.type === 'category');
@@ -627,7 +627,7 @@
             }
 
             html += '<div class="suggestion-columns">';
-            
+
             // Only show categories col if not on category page and there are categories or child categories
             const isCategoryPage = $dropdown.closest('form').find('input[name="term_id"]').val();
             if (!isCategoryPage && (categories.length || childCategories.length)) {
@@ -645,17 +645,17 @@
                 });
 
                 // Show categories with their children if any
-                categories.forEach(function(category){
-                    html += '<li class="suggestion-item" data-url="'+category.permalink+'">'
+                categories.forEach(function (category) {
+                    html += '<li class="suggestion-item" data-url="' + category.permalink + '">'
                         + '<span class="suggestion-icon suggestion-category"><i class="fa fa-folder"></i></span>'
-                        + '<a href="'+category.permalink+'">'+category.name+'</a>';
-                    
+                        + '<a href="' + category.permalink + '">' + category.name + '</a>';
+
                     // If this category has children in search results, show them
                     if (parentGroups[category.id]) {
                         html += '<ul class="child-suggestions">';
-                        parentGroups[category.id].forEach(function(child){
-                            html += '<li class="suggestion-item child-suggestion" data-url="'+child.permalink+'">'
-                                + '<a href="'+child.permalink+'">'+child.name+'</a>'
+                        parentGroups[category.id].forEach(function (child) {
+                            html += '<li class="suggestion-item child-suggestion" data-url="' + child.permalink + '">'
+                                + '<a href="' + child.permalink + '">' + child.name + '</a>'
                                 + '</li>';
                         });
                         html += '</ul>';
@@ -669,17 +669,17 @@
                     if (!categories.find(cat => cat.id === parseInt(parentId))) {
                         // Use parent info from first child
                         const firstChild = children[0];
-                        html += '<li class="suggestion-item parent-category">'
+                        html += '<li class="suggestion-item parent-category" data-url="' + firstChild.parent_link + '">'
                             + '<span class="suggestion-icon suggestion-category"><i class="fa fa-folder"></i></span>'
-                            + '<a href="'+firstChild.parent_link+'">'+firstChild.parent_name+'</a>'
+                            + '<a href="' + firstChild.parent_link + '">' + firstChild.parent_name + '</a>'
                             + '<ul class="child-suggestions">';
-                        
-                        children.forEach(function(child){
-                            html += '<li class="suggestion-item child-suggestion" data-url="'+child.permalink+'">'
-                                + '<a href="'+child.permalink+'">'+child.name+'</a>'
+
+                        children.forEach(function (child) {
+                            html += '<li class="suggestion-item child-suggestion" data-url="' + child.permalink + '">'
+                                + '<a href="' + child.permalink + '">' + child.name + '</a>'
                                 + '</li>';
                         });
-                        
+
                         html += '</ul></li>';
                     }
                 });
@@ -693,10 +693,10 @@
                 html += '<div class="suggestion-col suggestion-col-insurer">';
                 html += '<div class="suggestion-col-title">Insurers</div>';
                 html += '<ul class="suggestion-list">';
-                insurers.forEach(function(item){
-                    html += '<li class="suggestion-item" data-url="'+item.permalink+'">'
+                insurers.forEach(function (item) {
+                    html += '<li class="suggestion-item" data-url="' + item.permalink + '">'
                         + '<span class="suggestion-icon suggestion-insurer"><i class="fa fa-shield"></i></span>'
-                        + '<a href="'+item.permalink+'">'+item.name+'</a>'
+                        + '<a href="' + item.permalink + '">' + item.name + '</a>'
                         + '</li>';
                 });
                 html += '</ul>';
@@ -708,61 +708,61 @@
 
         function searchLocalData(searchTerm, categoriesData, insurersData, categoryFilter = null) {
             let results = [];
-            
+
             if (!searchTerm || searchTerm.length < 2) {
                 return results;
             }
-            
+
             const searchLower = searchTerm.toLowerCase();
-            
+
             // Search categories (only if not filtering by category)
             if (!categoryFilter) {
                 const matchedCategories = categoriesData.filter(cat => {
                     return cat.name.toLowerCase().includes(searchLower);
                 });
-                
+
                 // Sort categories: exact matches first, then partial matches
                 matchedCategories.sort((a, b) => {
                     const aExact = a.name.toLowerCase() === searchLower ? 1 : 0;
                     const bExact = b.name.toLowerCase() === searchLower ? 1 : 0;
                     if (aExact !== bExact) return bExact - aExact;
-                    
+
                     const aStarts = a.name.toLowerCase().startsWith(searchLower) ? 1 : 0;
                     const bStarts = b.name.toLowerCase().startsWith(searchLower) ? 1 : 0;
                     if (aStarts !== bStarts) return bStarts - aStarts;
-                    
+
                     return a.name.localeCompare(b.name);
                 });
-                
+
                 results = results.concat(matchedCategories);
             }
-            
+
             // Search insurers (apply category filter if provided)
             const matchedInsurers = insurersData.filter(insurer => {
                 if (!insurer.name.toLowerCase().includes(searchLower)) {
                     return false;
                 }
-                
+
                 // If category filter is active, we'd need to check insurer categories
                 // For now, include all matching insurers
                 return true;
             });
-            
+
             // Sort insurers: exact matches first, then partial matches
             matchedInsurers.sort((a, b) => {
                 const aExact = a.name.toLowerCase() === searchLower ? 1 : 0;
                 const bExact = b.name.toLowerCase() === searchLower ? 1 : 0;
                 if (aExact !== bExact) return bExact - aExact;
-                
+
                 const aStarts = a.name.toLowerCase().startsWith(searchLower) ? 1 : 0;
                 const bStarts = b.name.toLowerCase().startsWith(searchLower) ? 1 : 0;
                 if (aStarts !== bStarts) return bStarts - aStarts;
-                
+
                 return a.name.localeCompare(b.name);
             });
-            
+
             results = results.concat(matchedInsurers);
-            
+
             return results;
         }
 
@@ -770,15 +770,15 @@
             let $input = $form.find('.search-insurer-input');
             let $dropdown = $form.find('.insurer-suggestion-dropdown');
             let termId = $form.find('input[name="term_id"]').val() || '';
-            
+
             // Get JSON data from hidden inputs
             let categoriesData = [];
             let insurersData = [];
-            
+
             try {
                 const categoryJson = $form.find('#search_category_json').val();
                 const insurerJson = $form.find('#search_insurer_json').val();
-                
+
                 if (categoryJson) {
                     categoriesData = JSON.parse(categoryJson);
                 }
@@ -794,12 +794,12 @@
 
             // Search suggestions on input
             let typingTimer;
-            $input.on('input', function(){
+            $input.on('input', function () {
                 let val = $(this).val();
-                
+
                 // Clear any existing timer
                 clearTimeout(typingTimer);
-                
+
                 if (val.trim() === '') {
                     $dropdown.html($dropdown.data('default-html'));
                     $dropdown.slideDown(120);
@@ -813,7 +813,7 @@
                 }
 
                 // Wait for user to finish typing (100ms)
-                typingTimer = setTimeout(function() {
+                typingTimer = setTimeout(function () {
                     // Search local data instead of AJAX
                     const suggestions = searchLocalData(val, categoriesData, insurersData, termId);
 
@@ -823,7 +823,7 @@
             });
 
             // Hide dropdown when clicking outside the input or dropdown
-            $(document).on('mousedown.ica-suggestion', function(e){
+            $(document).on('mousedown.ica-suggestion', function (e) {
                 if (
                     !$input.is(e.target) && $input.has(e.target).length === 0 &&
                     !$dropdown.is(e.target) && $dropdown.has(e.target).length === 0
@@ -833,9 +833,13 @@
             });
 
             // Click on suggestion
-            $dropdown.on('mousedown', '.suggestion-item', function(e){
+            $dropdown.on('mousedown', '.suggestion-item', function (e) {
                 e.preventDefault();
-                window.location.href = $(this).data('url');
+                e.stopPropagation();
+                const url = $(this).data('url');
+                if (url && url !== 'undefined') {
+                    window.location.href = url;
+                }
             });
         }
 
@@ -844,4 +848,4 @@
         // Do NOT apply to instant search
     });
 
-} )( window, jQuery )
+})(window, jQuery)
